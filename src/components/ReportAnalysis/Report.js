@@ -49,7 +49,7 @@ class ReportAnalysis extends Component {
     formData.append('language', selectedLanguage);
 
     try {
-      const response = await fetch('http://localhost:3000/analyze-report', {
+      const response = await fetch('https://main-diagno-db-1.onrender.com/analyze-report', {
         method: 'POST',
         body: formData,
       });
