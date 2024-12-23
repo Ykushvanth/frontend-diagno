@@ -74,8 +74,8 @@
     border: 1px solid #007bff;
     font-size: 16px;
     color: #333;
-}
-
+/* }
+sjs */
 .language-dropdown:focus {
     outline: none;
     border-color: #007bff;
