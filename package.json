@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@fortawesome/fontawesome-svg-core": "^6.7.2",
+    "@fortawesome/free-solid-svg-icons": "^6.7.2",
+    "@fortawesome/react-fontawesome": "^0.2.2",
     "aos": "^2.3.4",
     "framer-motion": "^11.15.0",
     "js-cookie": "^3.0.5",
@@ -14,6 +17,7 @@
     "react-router-dom": "^5.2.0",
     "react-scripts": "5.0.1",
     "styled-components": "^6.1.13",
+    "translate-google": "^1.5.0",
     "twilio": "^5.4.0",
     "web-vitals": "^4.2.4"
   },

@@ -2,10 +2,8 @@ import React from 'react';
 import { Link } from "react-router-dom";
 import Header from "../Header/Header";
 import { FiUpload } from 'react-icons/fi';
-import axios from 'axios';
-import Cookies from 'js-cookie';
 import "./Analyse.css";
-import { Oval } from 'react-loader-spinner'; // Import the specific loader, e.g., Oval
+import { Oval } from 'react-loader-spinner';
 
 const languages = [
     { id: "english", language: "English" },
@@ -31,69 +29,19 @@ class Analyse extends React.Component {
         recommendedSpecialist: null,
     };
 
-    extractSpecialist = (result) => {
-        try {
-            console.log("Full analysis result:", result); // Debug log
-
-            // Look for the specialist section
-            const specialistPattern = /Recommended Specialist:[\s\S]*?Specialist:\s*([A-Za-z]+)/i;
-            const match = result.match(specialistPattern);
-            
-            if (match && match[1]) {
-                const specialist = match[1].trim();
-                console.log("Extracted specialist:", specialist);
-                return specialist;
-            }
-
-            // Alternative extraction method if the first one fails
-            const sections = result.split(/\d+\./);
-            const specialistSection = sections.find(section => 
-                section.toLowerCase().includes('recommended specialist'));
-            
-            console.log("Specialist section found:", specialistSection);
-
-            if (specialistSection) {
-                const lines = specialistSection.split('\n');
-                const specialistLine = lines.find(line => 
-                    line.toLowerCase().includes('specialist:'));
-                
-                console.log("Specialist line found:", specialistLine);
-
-                if (specialistLine) {
-                    const specialist = specialistLine
-                        .split(':')[1]
-                        .trim()
-                        .split(' ')[0]
-                        .trim();
-                    console.log("Extracted specialist (method 2):", specialist);
-                    return specialist;
-                }
-            }
-
-            console.log("No specialist found in the analysis");
-            return null;
-        } catch (error) {
-            console.error('Error extracting specialist:', error);
-            return null;
-        }
-    };
-
-    // Handle file selection
     handleFileChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            this.setState({ file });
+            this.setState({ file, error: null });
         } else {
             this.setState({ error: "Please select a file." });
         }
     };
 
-    // Handle language selection
     handleLanguageChange = (e) => {
         this.setState({ selectedLanguage: e.target.value });
     };
 
-    // Handle form submission
     handleSubmit = async (e) => {
         e.preventDefault();
         const { file, selectedLanguage } = this.state;
@@ -103,36 +51,49 @@ class Analyse extends React.Component {
             return;
         }
 
-        this.setState({ error: null, loading: true });
+        this.setState({ error: null, loading: true, result: null });
       
         const formData = new FormData();
         formData.append('file', file);
         formData.append('language', selectedLanguage);
 
         try {
-            const response = await axios.post('http://localhost:3008/upload', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' },
+            const response = await fetch('http://localhost:3008/api/analyze', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'Accept': 'application/json',
+                },
+                mode: 'cors',
+                credentials: 'omit'
             });
 
-            if (response.status === 200) {
-                const result = response.data.formattedOutput;
-                console.log("Raw API response:", response.data); // Debug log
-                console.log("Formatted output:", result); // Debug log
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to analyze report');
+            }
+
+            if (data && data.success) {
+                const { formattedOutput } = data;
                 
-                const specialist = this.extractSpecialist(result);
-                console.log("Final extracted specialist:", specialist); // Debug log
+                // Extract specialist from the analysis
+                const specialistMatch = formattedOutput.match(/5\.\s*Recommended\s*Specialist:\s*([^:\n]+)/i);
+                const specialist = specialistMatch ? specialistMatch[1].trim() : null;
                 
                 this.setState({ 
-                    result,
+                    result: formattedOutput,
                     recommendedSpecialist: specialist,
                     error: null, 
                     loading: false 
                 });
+            } else {
+                throw new Error(data.error || 'Failed to analyze report');
             }
         } catch (error) {
             console.error('Error:', error);
             this.setState({ 
-                error: `Error: ${error.response?.data?.error || error.message || 'Unknown error occurred'}`, 
+                error: error.message || 'Error analyzing report', 
                 loading: false 
             });
         }
@@ -157,7 +118,7 @@ class Analyse extends React.Component {
                                         id="file-upload"
                                         className="file"
                                         type="file"
-                                        accept=".pdf,.doc,.docx,.txt" // Add file type validation
+                                        accept="image/*"
                                         onChange={this.handleFileChange}
                                     />
                                 </div>
@@ -170,7 +131,6 @@ class Analyse extends React.Component {
                                         onChange={this.handleLanguageChange}
                                         className="language-dropdown"
                                     >
-                                        <option value="" disabled>Select a language</option>
                                         {languages.map((lang) => (
                                             <option key={lang.id} value={lang.id}>
                                                 {lang.language}
@@ -190,78 +150,37 @@ class Analyse extends React.Component {
                                 </div>
                             )}
                         </form>
-                    </div>
 
-                    {/* Display loader during file upload */}
-                    {loading && (
-                        <div className="loader-container">
-                            <Oval
-                                height={80}
-                                width={80}
-                                color="#4fa94d"
-                                ariaLabel="loading"
-                                visible={true}
-                            />
-                        </div>
-                    )}
+                        {loading && (
+                            <div className="loader-container">
+                                <Oval
+                                    height={80}
+                                    width={80}
+                                    color="#4fa94d"
+                                    secondaryColor="#4fa94d"
+                                    strokeWidth={2}
+                                    strokeWidthSecondary={2}
+                                />
+                            </div>
+                        )}
 
-                    {/* Display the result */}
-                    {result && (
-                        <div className="result-container">
-                            <h2 className="result-heading">Analysis Results:</h2>
-                            {result.split('\n\n').map((section, index) => {
-                                if (section.trim()) {
-                                    const [title, ...content] = section.split('\n');
-                                    return (
-                                        <div key={index} className="result-section">
-                                            <div className="qa-box">
-                                                <h3 className="question">{title}</h3>
-                                                <div className="answer">
-                                                    {content.map((line, lineIndex) => (
-                                                        <p key={lineIndex}>{line.replace(/^-\s*/, '• ')}</p>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    );
-                                }
-                                return null;
-                            })}
-
-                            {/* Add Book Appointment section */}
-                            <div className="appointment-section">
-                                {recommendedSpecialist ? (
-                                    <div className="specialist-info">
-                                        <h3>Recommended Specialist: {recommendedSpecialist}</h3>
-                                        <Link 
-                                            to={{
-                                                pathname: "/appointments",
-                                                state: { specialist: recommendedSpecialist }
-                                            }}
-                                            className="appointment-link"
-                                        >
-                                            <button className="report-button">
-                                                Book Appointment with {recommendedSpecialist}
-                                            </button>
-                                        </Link>
+                        {result && (
+                            <div className="result-container">
+                                <h2 className="result-heading">Analysis Result</h2>
+                                <div className="result-section">
+                                    <div className="qa-box">
+                                        <pre className="result-text">{result}</pre>
                                     </div>
-                                ) : (
-                                    <div className="no-specialist-info">
-                                        <p>No specialist recommendation found in the analysis.</p>
-                                        <p className="debug-info">
-                                            Please ensure the medical report contains sufficient information 
-                                            for specialist recommendation.
-                                        </p>
-                                        {process.env.NODE_ENV === 'development' && (
-                                            <pre className="debug-output">
-                                                {JSON.stringify({ result }, null, 2)}
-                                            </pre>
-                                        )}
+                                </div>
+                                {recommendedSpecialist && (
+                                    <div className="specialist-info">
+                                        <h3>Recommended Specialist</h3>
+                                        <p>{recommendedSpecialist}</p>
                                     </div>
                                 )}
                             </div>
-                        </div>
-                    )}
+                        )}
+                    </div>
                 </div>
             </>
         );

@@ -36,7 +36,7 @@ const App = () => {
           <PrivateRoute exact path="/home" component={Home} />
           <PrivateRoute exact path="/about-us" component={AboutUs} />
           <PrivateRoute exact path="/services" component={Services} />
-          <PrivateRoute exact path="/analyse" component={Analyse} />
+         
           <PrivateRoute exact path="/analyse-report" component={Analyse} />
           <Route exact path="/">
             {Cookies.get('jwt_token') ? <Redirect to="/home" /> : <Redirect to="/login" />}
