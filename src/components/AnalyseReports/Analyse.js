@@ -166,16 +166,31 @@ class Analyse extends React.Component {
 
                         {result && (
                             <div className="result-container">
-                                <h2 className="result-heading">Analysis Result</h2>
-                                <div className="result-section">
-                                    <div className="qa-box">
-                                        <pre className="result-text">{result}</pre>
-                                    </div>
+                                <h2 className="result-heading">Medical Report Analysis</h2>
+                                <div className="result-sections">
+                                    {result.split(/(?=\d\.\s+(?:Symptoms|Diagnosis|Severity|Treatment|Recommended))/)
+                                        .filter(section => section.trim())
+                                        .map((section, index) => {
+                                            const [title, ...content] = section.split('\n');
+                                            return (
+                                                <div key={index} className="analysis-block">
+                                                    <div className="section-title">
+                                                        <span className="section-number">{index + 1}</span>
+                                                        <span>{title.replace(/^\d\.\s*/, '').trim()}</span>
+                                                    </div>
+                                                    <div className="section-content">
+                                                        {content.join('\n').trim()}
+                                                    </div>
+                                                </div>
+                                            );
+                                    })}
                                 </div>
                                 {recommendedSpecialist && (
-                                    <div className="specialist-info">
-                                        <h3>Recommended Specialist</h3>
-                                        <p>{recommendedSpecialist}</p>
+                                    <div className="book-appointment">
+                                        <button className="appointment-btn">
+                                            <i className="fas fa-calendar-alt"></i>
+                                            Book Appointment with {recommendedSpecialist}
+                                        </button>
                                     </div>
                                 )}
                             </div>
