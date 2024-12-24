@@ -2,8 +2,8 @@ import React from 'react';
 import { Link } from "react-router-dom";
 import Header from "../Header/Header";
 import { FiUpload } from 'react-icons/fi';
+import { FaHeartbeat } from 'react-icons/fa';
 import "./Analyse.css";
-import { Oval } from 'react-loader-spinner';
 
 const languages = [
     { id: "english", language: "English" },
@@ -153,14 +153,7 @@ class Analyse extends React.Component {
 
                         {loading && (
                             <div className="loader-container">
-                                <Oval
-                                    height={80}
-                                    width={80}
-                                    color="#4fa94d"
-                                    secondaryColor="#4fa94d"
-                                    strokeWidth={2}
-                                    strokeWidthSecondary={2}
-                                />
+                                <FaHeartbeat className="heartbeat-icon" />
                             </div>
                         )}
 
