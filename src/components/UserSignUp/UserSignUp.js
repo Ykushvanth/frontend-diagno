@@ -59,7 +59,7 @@ class SignUp extends Component {
         const { username, firstname, lastname, email, phoneNumber, dateOfBirth, password, gender } = this.state;
 
         try {
-            const response = await fetch("https://main-diagno-db-1.onrender.com/api/signup", {
+            const response = await fetch("https://main-diagno-db-2.onrender.com/api/signup", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
