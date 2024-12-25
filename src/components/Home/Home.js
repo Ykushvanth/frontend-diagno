@@ -27,8 +27,11 @@ const Home = () => {
     }, [text]);
 
     return(
+        <>
+          <Header/>
+       
         <div className="home-page">
-            <Header/>
+          
             
             <div className="second-container">
                 <div className="content-wrapper">
@@ -127,6 +130,7 @@ const Home = () => {
                 </div>
             </div>
         </div>
+        </>
     )
 }
 

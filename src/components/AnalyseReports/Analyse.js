@@ -161,22 +161,26 @@ class Analyse extends React.Component {
                             <div className="result-container">
                                 <h2 className="result-heading">Medical Report Analysis</h2>
                                 <div className="result-sections">
-                                    {result.split(/(?=\d\.\s+(?:Symptoms|Diagnosis|Severity|Treatment|Recommended))/)
+                                    {result.split(/(?=\d\.\s+[^:]+:)/)
                                         .filter(section => section.trim())
                                         .map((section, index) => {
-                                            const [title, ...content] = section.split('\n');
+                                            const match = section.match(/^(\d\.\s+[^:]+:)([\s\S]+)$/);
+                                            if (!match) return null;
+                                            
+                                            const [_, title, content] = match;
+                                            
                                             return (
                                                 <div key={index} className="analysis-block">
                                                     <div className="section-title">
                                                         <span className="section-number">{index + 1}</span>
-                                                        <span>{title.replace(/^\d\.\s*/, '').trim()}</span>
+                                                        <span>{title.replace(/^\d\.\s+/, '').replace(/:$/, '')}</span>
                                                     </div>
                                                     <div className="section-content">
-                                                        {content.join('\n').trim()}
+                                                        {content.trim()}
                                                     </div>
                                                 </div>
                                             );
-                                    })}
+                                        })}
                                 </div>
                                 {recommendedSpecialist && (
                                     <div className="book-appointment">

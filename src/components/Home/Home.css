@@ -1,6 +1,6 @@
 .home-page {
     min-height: 100vh;
-    background-color: #f8f9fa;
+    background-color: #faf9f8;
 }
 
 .second-container {
@@ -20,6 +20,7 @@
     margin: 0 auto;
     display: flex;
     align-items: center;
+    height: 80vh;
     justify-content: space-between;
     gap: 60px;
     width: 100%;
