@@ -26,7 +26,7 @@ class UserLogin extends Component {
     const {username, password} = this.state
 
     try {
-      const response = await fetch("https://main-diagno-db-2.onrender.com/api/login", {
+      const response = await fetch("http://localhost:3008/api/login", {
         method: 'POST',
         headers: {
           "Content-Type": "application/json",

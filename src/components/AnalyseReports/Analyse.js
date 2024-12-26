@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from "react-router-dom";
 import Header from "../Header/Header";
-import { FiUpload } from 'react-icons/fi';
+import { FiUpload, FiVolume2, FiSquare } from 'react-icons/fi';
 import { FaHeartbeat } from 'react-icons/fa';
 import "./Analyse.css";
 
@@ -27,6 +27,8 @@ class Analyse extends React.Component {
         error: null,
         loading: false,
         recommendedSpecialist: null,
+        speaking: false,
+        speakingSectionIndex: null
     };
 
     handleFileChange = (e) => {
@@ -99,8 +101,127 @@ class Analyse extends React.Component {
         }
     };
 
+    stopAudio = () => {
+        if (window.speechSynthesis) {
+            window.speechSynthesis.cancel();
+            this.setState({ speaking: false, speakingSectionIndex: null });
+        }
+    };
+
+    playAudio = (text, sectionIndex) => {
+        if (!window.speechSynthesis) {
+            alert('Text-to-speech is not supported in your browser.');
+            return;
+        }
+
+        this.stopAudio();
+
+        try {
+            const utterance = new SpeechSynthesisUtterance(text);
+            
+            const langMap = {
+                'english': 'en-US',
+                'telugu': 'te-IN',
+                'hindi': 'hi-IN',
+                'tamil': 'ta-IN',
+                'kannada': 'kn-IN',
+                'malayalam': 'ml-IN',
+                'marathi': 'mr-IN',
+                'bengali': 'bn-IN'
+            };
+            
+            utterance.lang = langMap[this.state.selectedLanguage] || 'en-US';
+            utterance.rate = 1.0;
+            utterance.pitch = 1.0;
+            
+            utterance.onstart = () => {
+                this.setState({ speaking: true, speakingSectionIndex: sectionIndex });
+            };
+            
+            utterance.onend = () => {
+                this.setState({ speaking: false, speakingSectionIndex: null });
+            };
+            
+            utterance.onerror = () => {
+                this.setState({ speaking: false, speakingSectionIndex: null });
+            };
+
+            window.speechSynthesis.speak(utterance);
+        } catch (error) {
+            console.error('Speech synthesis error:', error);
+            this.setState({ speaking: false, speakingSectionIndex: null });
+        }
+    };
+
+    componentWillUnmount() {
+        this.stopAudio();
+    }
+
+    getSectionHeading = (sectionNumber) => {
+        const headings = {
+            english: {
+                1: "Symptoms",
+                2: "Diagnosis",
+                3: "Severity Level",
+                4: "Treatment Recommendations",
+                5: "Recommended Specialist"
+            },
+            telugu: {
+                1: "లక్షణాలు",
+                2: "రోగనిర్ధారణ",
+                3: "తీవ్రత స్థాయి",
+                4: "చికిత్స సిఫార్సులు",
+                5: "సిఫార్సు చేయబడిన నిపుణుడు"
+            },
+            hindi: {
+                1: "लक्षण",
+                2: "निदान",
+                3: "गंभीरता का स्तर",
+                4: "उपचार की सिफारिशें",
+                5: "अनुशंसित विशेषज्ञ"
+            },
+            tamil: {
+                1: "அறிகுறிகள்",
+                2: "நோயறிதல்",
+                3: "தீவிர நிலை",
+                4: "சிகிச்சை பரிந்துரைகள்",
+                5: "பரிந்துரைக்கப்பட்ட நிபுணர்"
+            },
+            kannada: {
+                1: "ರೋಗಲಕ್ಷಣಗಳು",
+                2: "ರೋಗನಿರ್ಣಯ",
+                3: "ತೀವ್ರತೆಯ ಮಟ್ಟ",
+                4: "ಚಿಕಿತ್ಸೆಯ ಶಿಫಾರಸುಗಳು",
+                5: "ಶಿಫಾರಸು ಮಾಡಿದ ತಜ್ಞ"
+            },
+            malayalam: {
+                1: "രോഗലക്ഷണങ്ങൾ",
+                2: "രോഗനിർണ്ണയം",
+                3: "തീവ്രത നില",
+                4: "ചികിത്സാ ശുപാർശകൾ",
+                5: "ശുപാർശ ചെയ്ത വിദഗ്ധൻ"
+            },
+            marathi: {
+                1: "लक्षणे",
+                2: "निदान",
+                3: "तीव्रता पातळी",
+                4: "उपचार शिफारसी",
+                5: "शिफारस केलेले तज्ञ"
+            },
+            bengali: {
+                1: "লক্ষণগুলি",
+                2: "রোগ নির্ণয়",
+                3: "তীব্রতার মাত্রা",
+                4: "চিকিৎসার সুপারিশ",
+                5: "সুপারিশকৃত বিশেষজ্ঞ"
+            }
+        };
+
+        return headings[this.state.selectedLanguage]?.[sectionNumber] || headings.english[sectionNumber];
+    };
+
     render() {
-        const { languages, selectedLanguage, result, error, loading, recommendedSpecialist } = this.state;
+        const { languages, selectedLanguage, result, error, loading, recommendedSpecialist, speaking, speakingSectionIndex } = this.state;
 
         return (
             <>
@@ -168,12 +289,29 @@ class Analyse extends React.Component {
                                             if (!match) return null;
                                             
                                             const [_, title, content] = match;
+                                            const sectionNumber = index + 1;
+                                            const translatedTitle = this.getSectionHeading(sectionNumber);
+                                            const isSpeakingThis = speaking && speakingSectionIndex === index;
                                             
                                             return (
                                                 <div key={index} className="analysis-block">
-                                                    <div className="section-title">
-                                                        <span className="section-number">{index + 1}</span>
-                                                        <span>{title.replace(/^\d\.\s+/, '').replace(/:$/, '')}</span>
+                                                    <div className="section-header">
+                                                        <div className="section-title">
+                                                            {`${sectionNumber}. ${translatedTitle}:`}
+                                                        </div>
+                                                        <button 
+                                                            className={`speech-button ${isSpeakingThis ? 'speaking' : ''}`}
+                                                            onClick={() => {
+                                                                if (isSpeakingThis) {
+                                                                    this.stopAudio();
+                                                                } else {
+                                                                    this.playAudio(content.trim(), index);
+                                                                }
+                                                            }}
+                                                        >
+                                                            {isSpeakingThis ? <FiSquare /> : <FiVolume2 />}
+                                                            <span>{isSpeakingThis ? 'Stop' : 'Listen'}</span>
+                                                        </button>
                                                     </div>
                                                     <div className="section-content">
                                                         {content.trim()}
