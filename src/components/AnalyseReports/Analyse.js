@@ -66,6 +66,7 @@ class Analyse extends React.Component {
                 headers: {
                     'Accept': 'application/json',
                 },
+                //
                 mode: 'cors',
                 credentials: 'omit'
             });
