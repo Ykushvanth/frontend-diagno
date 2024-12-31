@@ -5,7 +5,11 @@ import Home from './components/Home/Home';
 import AboutUs from './components/Aboutus/Aboutus';
 import Services from './components/services/services';
 import Analyse from './components/AnalyseReports/Analyse';
+import BookingHistory from './components/BookingHistory';
+import Appointments from './components/Appointments';
 import Cookies from 'js-cookie';
+import Profile from './components/Profile';
+
 import './App.css';
 
 const PrivateRoute = ({ component: Component, ...rest }) => {
@@ -34,9 +38,11 @@ const App = () => {
           </Route>
           <Route exact path="/signup" component={UserSignUp} />
           <PrivateRoute exact path="/home" component={Home} />
+          <PrivateRoute exact path="/profile" component={Profile} />
           <PrivateRoute exact path="/about-us" component={AboutUs} />
           <PrivateRoute exact path="/services" component={Services} />
-         
+          <Route exact path="/appointments" component={Appointments} />
+          <Route exact path="/booking-history" component={BookingHistory} />
           <PrivateRoute exact path="/analyse-report" component={Analyse} />
           <Route exact path="/">
             {Cookies.get('jwt_token') ? <Redirect to="/home" /> : <Redirect to="/login" />}

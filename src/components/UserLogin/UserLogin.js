@@ -4,46 +4,64 @@ import {Redirect} from "react-router-dom"
 import {Link} from "react-router-dom"
 import "./UserLogin.css"
 
-class UserLogin extends Component {
+class LoginForm extends Component {
   state = {
     username: "",
     password: "",
     errorMsg: "",
-    showError: false,
-    isLoggedIn: false,
+    showError: false
   }
 
-  onChangeUsername = (event) => {
-    this.setState({ username: event.target.value })
+  onSubmitSuccess = (data) => {
+    const {history} = this.props
+
+
+   
+    // Save token to cookies
+    Cookies.set('jwt_token', data.jwt_token, {
+      expires: 30,
+      path: '/',
+    })
+    let id = data.user.id;
+    // let patientname = data.firstname;
+    // let age = data.age;
+    // let phoneNumber = data.phonenumber;
+    // let gender = data.gender;
+    // Save user data to localStorage
+    localStorage.setItem('userDetails',JSON.stringify(data.user))
+    localStorage.setItem('userData', JSON.stringify(id))
+    
+    history.replace('/')
   }
 
-  onChangePassword = (event) => {
-    this.setState({ password: event.target.value })
-  }
-
-  onSubmitForm = async (event) => {
+  submitForm = async event => {
     event.preventDefault()
     const {username, password} = this.state
-
+    
+    const userDetails = {username, password}
+    const url = 'http://localhost:3009/api/login'
+                
     try {
-      const response = await fetch("http://localhost:3008/api/login", {
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           "Content-Type": "application/json",
           "Accept": "application/json"
         },
-        body: JSON.stringify({username, password}),
+        body: JSON.stringify(userDetails),
       })
-
+     
+      console.log('Login Response:', response);
       const data = await response.json()
+      console.log('Login Data:', data);
+      
       if (response.ok) {
-        // Set the JWT token in cookies
-        Cookies.set('jwt_token', data.jwtToken, { expires: 30 });
-        this.setState({ isLoggedIn: true });
+        this.onSubmitSuccess(data)
+      
       } else {
         this.setState({
           showError: true,
-          errorMsg: data.error || 'Login failed. Please check your credentials and try again.'
+          errorMsg: data.error || 'Invalid credentials'
         })
       }
     } catch (error) {
@@ -55,14 +73,22 @@ class UserLogin extends Component {
     }
   }
 
+  onChangeUsername = event => {
+    this.setState({username: event.target.value})
+  }
+
+  onChangePassword = event => {
+    this.setState({password: event.target.value})
+  }
+
   render() {
     const {username, password, showError, errorMsg} = this.state
     const jwtToken = Cookies.get('jwt_token')
     
     if (jwtToken !== undefined) {
-      return <Redirect to="/home" />
+      return <Redirect to="/" />
     }
-
+    
     return (
       <div className="main-bg-container-for-login">
         <img 
@@ -77,17 +103,16 @@ class UserLogin extends Component {
             src="https://s3-alpha-sig.figma.com/img/0a45/f19e/7d4eedf4fa33fd9fc0b3c8a0c2a31d0f?Expires=1728259200&Key-Pair-Id=APKAQ4GOSFWCVNEHN3O4&Signature=SkHn~1X7XMdgF1GNThtucOukS4ysGKw0I2E6rRNXtGUtpk8FUk-aW~lRoBZvTIJOQNhssxbZZyEXvjoQhBN7DNu80qIcrkKURF4K2LK9DihnNdOL4yovII2Bs50MLhWTKK-y1VJkpKcO~gfMK6R5xjJVZW3v-lSs45SEopSlXvySZogxLed3d34HNJaK06q8md5gJHSdRujcnGBOgJpQ9416aWiO5hxBcX~Vy1tvoQ4ySqtpECN-eSyTCvyzBdLxUtr06av6JBbD8JL0vaJ8G5zN9CQ-6HZYtdnDl37vAm2qUc-ZhUe~hhxV~Sd~YXTx9EQ7kfidmPFUlCGr1HDRSg__" 
           />
           <h1 className="sign-in-heading">Sign In</h1>
-          <form className="form-container" onSubmit={this.onSubmitForm}>
+          <form className="form-container" onSubmit={this.submitForm}>
             <div className="container">
               <label className="label" htmlFor="username">Username</label>
               <input 
                 value={username} 
                 onChange={this.onChangeUsername} 
-                placeholder="Enter Username" 
+                placeholder="Username" 
                 id="username" 
                 type="text" 
                 className="input-text" 
-                required 
               />
             </div>
 
@@ -96,17 +121,16 @@ class UserLogin extends Component {
               <input 
                 value={password} 
                 onChange={this.onChangePassword}
-                placeholder="Enter Password" 
+                placeholder="Password" 
                 id="password" 
                 type="password" 
                 className="input-text" 
-                required 
               />
             </div>
 
             {showError && <p className="error-message">{errorMsg}</p>}
             
-            <button className="button-otp" type="submit">Sign In</button>
+            <button className="button" type="submit">Sign In</button>
             <Link to="/signup" className="link">
               <p className="sign-up-heading">Don't have an account? Sign Up</p>
             </Link>
@@ -117,4 +141,4 @@ class UserLogin extends Component {
   }
 }
 
-export default UserLogin
+export default LoginForm

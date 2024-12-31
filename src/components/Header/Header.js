@@ -45,7 +45,7 @@ class Header extends Component {
     const { history } = this.props;
     const userId = Cookies.get('user_id');
     console.log('Clicking profile with userId:', userId);
-    history.push(`/profile/${userId}`);
+    history.push(`/profile`);
     this.setState({ isSidebarOpen: false });
   };
 
@@ -112,7 +112,7 @@ class Header extends Component {
               src="https://res.cloudinary.com/dbroxheos/image/upload/v1727450617/gdyevtkkyx2gplt3c0kv.png"
             />
           </Link>
-          <ul className="unorder-list">
+          <ul className="unorder-lists">
             <Link to="/" className="link">
               <li>Home</li>
             </Link>
@@ -122,7 +122,8 @@ class Header extends Component {
             <Link to="/services" className="link">
               <li>Services</li>
             </Link>
-            <Link to={`/profile/${Cookies.get('user_id')}`} className="link">
+            {/* to={`/profile/${Cookies.get('user_id')}`} */}
+            <Link to="/profile"  className="link">
               <li>Profile</li>
             </Link>
             <Link to="/booking-history" className="link">

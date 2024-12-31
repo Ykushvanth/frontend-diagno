@@ -254,33 +254,33 @@
 }
 
 .book-appointment {
-    margin-top: 35px;
+    margin-top: 20px;
     text-align: center;
 }
 
-.appointment-btn {
-    background: linear-gradient(135deg, #4299e1 0%, #667eea 100%);
-    color: white;
-    border: none;
-    padding: 14px 32px;
-    border-radius: 10px;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 12px rgba(66, 153, 225, 0.2);
+.book-appointment-btn {
     display: inline-flex;
     align-items: center;
-    gap: 10px;
+    justify-content: center;
+    padding: 12px 24px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    text-decoration: none;
+    transition: background-color 0.3s ease;
+    cursor: pointer;
 }
 
-.appointment-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(66, 153, 225, 0.3);
+.book-appointment-btn:hover {
+    background-color: #0056b3;
+    text-decoration: none;
+    color: white;
 }
 
-.appointment-btn i {
-    font-size: 18px;
+.book-appointment-btn i {
+    margin-right: 8px;
 }
 
 /* Responsive adjustments */

@@ -59,7 +59,7 @@ class SignUp extends Component {
         const { username, firstname, lastname, email, phoneNumber, dateOfBirth, password, gender } = this.state;
 
         try {
-            const response = await fetch("https://main-diagno-db-2.onrender.com/api/signup", {
+            const response = await fetch("http://localhost:3009/api/signup", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -81,7 +81,8 @@ class SignUp extends Component {
             
             if (response.ok) {
                 // Redirect to login page on successful signup
-                this.props.history.push('/login');
+                // this.props.history.push('/login');
+                this.onSubmitSuccess(data)
             } else {
                 this.setState({
                     showError: true,
