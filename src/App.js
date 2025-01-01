@@ -5,6 +5,7 @@ import Home from './components/Home/Home';
 import AboutUs from './components/Aboutus/Aboutus';
 import Services from './components/services/services';
 import Analyse from './components/AnalyseReports/Analyse';
+import XrayReport from './components/XrayReport';
 import BookingHistory from './components/BookingHistory';
 import Appointments from './components/Appointments';
 import Cookies from 'js-cookie';
@@ -41,6 +42,7 @@ const App = () => {
           <PrivateRoute exact path="/profile" component={Profile} />
           <PrivateRoute exact path="/about-us" component={AboutUs} />
           <PrivateRoute exact path="/services" component={Services} />
+          <Route exact path="/x-ray-reports" component={XrayReport} />
           <Route exact path="/appointments" component={Appointments} />
           <Route exact path="/booking-history" component={BookingHistory} />
           <PrivateRoute exact path="/analyse-report" component={Analyse} />
