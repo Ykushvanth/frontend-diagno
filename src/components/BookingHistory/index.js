@@ -1,9 +1,9 @@
-
 import { useState, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 import Cookies from 'js-cookie';
 // import Header from '../Header';
 import './index.css';
+import { Link } from 'react-router-dom';
 
 const formatMonth = (dateString) => {
     const date = new Date(dateString);
@@ -74,6 +74,15 @@ const BookingHistory = () => {
         return appointment.status.toLowerCase() === filter;
     });
 
+    const isAppointmentTime = (date, time) => {
+        const appointmentDateTime = new Date(`${date}T${time}`);
+        const now = new Date();
+        
+        // Enable button 5 minutes before and up to 30 minutes after appointment time
+        const timeDifferenceInMinutes = (now - appointmentDateTime) / (1000 * 60);
+        return timeDifferenceInMinutes >= -5 && timeDifferenceInMinutes <= 30;
+    };
+
     if (loading) return (
         <>
             {/* <Header /> */}
@@ -143,6 +152,28 @@ const BookingHistory = () => {
                                     <i className="fas fa-map-marker-alt"></i>
                                     {appointment.location}
                                 </div>
+
+                                {appointment.mode === 'Online' && (
+                                    <div className="video-call-section">
+                                        {isAppointmentTime(appointment.date, appointment.time) ? (
+                                            <Link 
+                                                to={`/video-consultation/${appointment.id}`}
+                                                className="join-video-btn active"
+                                            >
+                                                Join Video Consultation
+                                            </Link>
+                                        ) : (
+                                            <button
+                                                className="join-video-btn disabled"
+                                                disabled
+                                            >
+                                                {new Date(`${appointment.date}T${appointment.time}`) > new Date() 
+                                                    ? 'Consultation Not Started Yet'
+                                                    : 'Consultation Ended'}
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     ))}

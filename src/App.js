@@ -9,6 +9,7 @@ import BookingHistory from './components/BookingHistory';
 import Appointments from './components/Appointments';
 import Cookies from 'js-cookie';
 import Profile from './components/Profile';
+import VideoConsultation from './components/VideoConsultation';
 
 import './App.css';
 
@@ -44,6 +45,7 @@ const App = () => {
           <Route exact path="/appointments" component={Appointments} />
           <Route exact path="/booking-history" component={BookingHistory} />
           <PrivateRoute exact path="/analyse-report" component={Analyse} />
+          <Route path="/video-consultation/:appointmentId" component={VideoConsultation} />
           <Route exact path="/">
             {Cookies.get('jwt_token') ? <Redirect to="/home" /> : <Redirect to="/login" />}
           </Route>

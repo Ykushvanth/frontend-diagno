@@ -29,6 +29,7 @@ class Appointments extends Component {
     isLoading: false,
     error: null,
     time: '',
+    mode: '',
   }
 
   componentDidMount() {
@@ -82,33 +83,62 @@ class Appointments extends Component {
     this.setState({ selectedLocation: event.target.value });
   };
 
-  onSubmitButton = event => {
-    event.preventDefault()
-    const {patientName, gender , age ,  date , phoneNumber , address, specialist, selectedLocation, time} = this.state
-    const newList = {
-      id: uuidv4(),
-      patientName: patientName ,
-      gender : gender,
-      age : age,
-      phoneNumber:phoneNumber,
-      address :address,
-      date: date,
-      time: time,
-      specialist: specialist,
-      location: selectedLocation,
-      isFavourite: false,
+  handleModeChange = (event) => {
+    const selectedMode = event.target.value;
+    console.log('Selected mode:', selectedMode); // Debug log
+    this.setState({ mode: selectedMode });
+  };
+
+  onSubmitButton = async (event) => {
+    event.preventDefault();
+    
+    // Get all required data including mode from state
+    const { 
+        patientName, 
+        gender, 
+        age, 
+        date, 
+        time, 
+        phoneNumber, 
+        address, 
+        specialist, 
+        selectedLocation, 
+        mode // Include mode here
+    } = this.state;
+
+    try {
+        const appointmentData = {
+            doctor_id: 8,
+            user_id: 1,
+            patient_name: patientName,
+            gender,
+            age,
+            date,
+            time,
+            phone_number: phoneNumber,
+            address,
+            specialist,
+            location: selectedLocation,
+            mode // Include mode in the request payload
+        };
+
+        console.log('Submitting appointment data:', appointmentData); // Debug log
+
+        const response = await axios.post(
+            'http://localhost:3009/api/appointments',
+            appointmentData
+        );
+
+        if (response.data) {
+            // Handle success
+            console.log('Appointment created successfully');
+        }
+
+    } catch (error) {
+        console.error('Error creating appointment:', error);
+        // Handle error
     }
-    this.setState(prevState => ({
-      appointmentsList: [...prevState.appointmentsList, newList],
-      patientName: '',
-      gender : '',
-      age : '',
-      phoneNumber : '',
-      address : '',
-      date: '',
-      selectedLocation: '',
-    }))
-  }
+  };
 
   titleFun = event => {
     this.setState({patientName: event.target.value})
@@ -290,10 +320,9 @@ class Appointments extends Component {
   };
 
   handleDoctorSelect = async (doctorId) => {
-    console.log("klkl")
+    console.log("Starting appointment booking process");
     const selectedDoctor = this.state.doctorResults.find(doctor => doctor.id === doctorId);
     if (selectedDoctor) {
-        // First check if the time slot is available
         try {
             // Check availability
             const availabilityResponse = await axios.get(
@@ -310,12 +339,10 @@ class Appointments extends Component {
                 return;
             }
 
-            // If available, proceed with booking
-            console.log("user id ssss")
-            console.log(this.state.user_id);
+            // Create appointment data with mode included
             const appointmentData = {
                 doctor_id: doctorId,
-                user_id :this.state.user_id,
+                user_id: this.state.user_id,
                 patient_name: this.state.patientName,
                 gender: this.state.gender,
                 age: parseInt(this.state.age),
@@ -324,19 +351,18 @@ class Appointments extends Component {
                 phone_number: this.state.phoneNumber,
                 address: this.state.address,
                 specialist: this.state.specialist,
-                location: this.state.selectedLocation
+                location: this.state.selectedLocation,
+                mode: this.state.mode  // Add mode to the request payload
             };
-            console.log("sssss")
-            console.log(appointmentData)
+
+            // Debug log to verify data being sent
+            console.log('Sending appointment data:', appointmentData);
 
             const response = await axios.post('http://localhost:3009/api/appointments', appointmentData, {
-              headers: {
-                'Content-Type': 'application/json',
-              },
+                headers: {
+                    'Content-Type': 'application/json',
+                }
             });
-            console.log(response)
-            // Debug log
-            console.log('Server response:', response);
 
             if (response.status === 201 || response.status === 200) {
                 this.setState(prevState => ({
@@ -352,6 +378,7 @@ class Appointments extends Component {
                     phoneNumber: '',
                     address: '',
                     date: '',
+                    mode: ''  // Reset mode after successful booking
                 }), () => {
                     alert(`Appointment booked successfully with Dr. ${selectedDoctor.name}`);
                     this.props.history.push('/services');
@@ -456,9 +483,9 @@ class Appointments extends Component {
   };
 
   render() {
-    const {appointmentsList, patientName,gender ,age , date,phoneNumber,address , filterBtn, isStared, specialist, locations, selectedLocation, doctorResults, noDoctorsFound, isLoading, error, time} = this.state
+    const {appointmentsList, patientName,gender ,age , date,phoneNumber,address , filterBtn, isStared, specialist, locations, selectedLocation, doctorResults, noDoctorsFound, isLoading, error, time, mode} = this.state
     const stared = isStared ? 'if-selected' : 'selected-button'
-    console.log(locations)
+    console.log(mode)
     return (
       <div className="main-appointment-bg-container">
         <div className="appointment-card-container">
@@ -585,15 +612,34 @@ class Appointments extends Component {
                 onChange={this.onClickAddress}
               />
               <br />
-              <div className='radio-container'>
-              <div>
-                <input className='radio' id = "online" name='status' select checked  type='radio' />
-                <label className='online'  htmlFor='online'>Online</label>
-              </div>
-              <div>
-                <input className='radio' id = "offline" name = "status" type='radio'/>
-                <label className='online' htmlFor='offline'>Offline</label>
-              </div>
+              <div className="form-group">
+                <label className="label">Mode of Appointment *</label>
+                <div className="radio-container">
+                    <input
+                        onChange={this.handleModeChange}
+                        type="radio"
+                        name="appointmentMode"
+                        id="Offline"
+                        value="Offline"
+                        checked={this.state.mode === 'Offline'}
+                        required
+                    />
+                    <label htmlFor="Offline">Offline</label>
+                    <input
+                        onChange={this.handleModeChange}
+                        type="radio"
+                        name="appointmentMode"
+                        id="Online"
+                        value="Online"
+                        checked={this.state.mode === 'Online'}
+                        className="ml-2"
+                        required
+                    />
+                    <label htmlFor="Online">Online</label>
+                </div>
+                {!this.state.mode && (
+                    <span className="error-text">Please select appointment mode</span>
+                )}
               </div>
               <div className="button-container">
                 {/* <button className="add-button" type="submit">

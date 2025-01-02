@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import Cookies from 'js-cookie';
+import Header from "../Header/Header";
 import './index.css';
 
 const Profile = () => {
@@ -62,6 +63,8 @@ const Profile = () => {
     }
 
     return (
+        <>
+        <Header/>
         <div className="profile-container">
             <div className="profile-header">
                 <h2>User Profile</h2>
@@ -104,6 +107,9 @@ const Profile = () => {
                 </div>
             </div>
         </div>
+        
+        </>
+       
     );
 };
 
