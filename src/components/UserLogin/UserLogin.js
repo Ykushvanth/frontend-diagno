@@ -20,7 +20,7 @@ class LoginForm extends Component {
     // Save token to cookies
     Cookies.set('jwt_token', data.jwt_token, {
       expires: 30,
-      path: '/',
+    
     })
     let id = data.user.id;
     // let patientname = data.firstname;
@@ -30,8 +30,7 @@ class LoginForm extends Component {
     // Save user data to localStorage
     localStorage.setItem('userDetails',JSON.stringify(data.user))
     localStorage.setItem('userData', JSON.stringify(id))
-    
-    history.replace('/')
+    history.push("/home")
   }
 
   submitForm = async event => {
@@ -86,7 +85,7 @@ class LoginForm extends Component {
     const jwtToken = Cookies.get('jwt_token')
     
     if (jwtToken !== undefined) {
-      return <Redirect to="/" />
+      return <Redirect to="/home" />
     }
     
     return (

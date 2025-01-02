@@ -92,7 +92,7 @@ class XrayReport extends Component {
         formData.append('fileType', 'xray');
 
         try {
-            const response = await axios.post('https://main-diagno-db-3.onrender.com/upload', formData, {
+            const response = await axios.post('http://localhost:3009/upload', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
 

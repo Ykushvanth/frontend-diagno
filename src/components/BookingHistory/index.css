@@ -572,6 +572,7 @@
     max-width: 1280px;
     margin: 0 auto;
     padding: 40px 24px;
+  
 }
 
 .booking-header {
@@ -579,6 +580,7 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 40px;
+    margin-top: 80px;
 }
 
 .header-content h1 {
