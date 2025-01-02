@@ -47,7 +47,7 @@ const BookingHistory = () => {
     const fetchAppointments = async () => {
         try {
             const token = Cookies.get('jwt_token');
-            const response = await fetch('http://localhost:3009/booking-history', {
+            const response = await fetch('https://main-diagno-db-3.onrender.com/booking-history', {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token}`,

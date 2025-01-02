@@ -69,7 +69,7 @@ class Appointments extends Component {
 
   fetchLocations = async () => {
     try {
-      const response = await axios.get('http://localhost:3009/api/doctor-locations');
+      const response = await axios.get('https://main-diagno-db-3.onrender.com/api/doctor-locations');
       console.log(response)
       console.log("response")
       this.setState({ locations: response.data });
@@ -244,7 +244,7 @@ class Appointments extends Component {
     try {
         // Make sure this URL matches your backend exactly
 
-        const url = `http://localhost:3009/api/doctor-locations/getDoctors?location=${encodeURIComponent(selectedLocation)}&specialization=${encodeURIComponent(specialist)}`;
+        const url = `https://main-diagno-db-3.onrender.com/api/doctor-locations/getDoctors?location=${encodeURIComponent(selectedLocation)}&specialization=${encodeURIComponent(specialist)}`;
         console.log('Fetching from URL:', url);
 
         const response = await fetch(url);
@@ -297,7 +297,7 @@ class Appointments extends Component {
         try {
             // Check availability
             const availabilityResponse = await axios.get(
-                `http://localhost:3009/api/appointments/check-availability`, {
+                `https://main-diagno-db-3.onrender.com/api/appointments/check-availability`, {
                 params: {
                     doctor_id: doctorId,
                     date: this.state.date,
@@ -329,7 +329,7 @@ class Appointments extends Component {
             console.log("sssss")
             console.log(appointmentData)
 
-            const response = await axios.post('http://localhost:3009/api/appointments', appointmentData, {
+            const response = await axios.post('https://main-diagno-db-3.onrender.com/api/appointments', appointmentData, {
               headers: {
                 'Content-Type': 'application/json',
               },

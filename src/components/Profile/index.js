@@ -20,7 +20,7 @@ const Profile = () => {
                     throw new Error('Authentication required');
                 }
 
-                const response = await fetch(`http://localhost:3009/api/user/${userId}`, {
+                const response = await fetch(`https://main-diagno-db-3.onrender.com/api/user/${userId}`, {
                     method: 'GET',
                     headers: {
                         'Authorization': `Bearer ${jwtToken}`,

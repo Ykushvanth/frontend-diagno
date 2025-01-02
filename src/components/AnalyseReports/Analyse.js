@@ -429,7 +429,7 @@ class Analyse extends React.Component {
         formData.append('language', selectedLanguage);
 
         try {
-            const response = await fetch('http://localhost:3009/api/analyze', {
+            const response = await fetch('https://main-diagno-db-3.onrender.com/api/analyze', {
                 method: 'POST',
                 body: formData,
                 headers: {
