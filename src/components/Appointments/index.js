@@ -5,6 +5,7 @@ import axios from 'axios'
 import AppointmentItem from '../AppointmentItem'
 import './index.css'
 import { withRouter } from 'react-router-dom';
+import Cookies from 'js-cookie';
 
 const generateTimeSlots = () => {
     const slots = [];
@@ -352,80 +353,68 @@ class Appointments extends Component {
   };
 
   handleDoctorSelect = async (doctorId) => {
-    console.log("Starting appointment booking process");
-    const selectedDoctor = this.state.doctorResults.find(doctor => doctor.id === doctorId);
-    if (selectedDoctor) {
-        try {
-            // Check availability
-            const availabilityResponse = await axios.get(
-                `http://localhost:3009/api/appointments/check-availability`, {
-                params: {
-                    doctor_id: doctorId,
-                    date: this.state.date,
-                    time: this.state.time
-                }
-            });
+    try {
+        const {
+            patientName,
+            gender,
+            age,
+            date,
+            time,
+            phoneNumber,
+            address,
+            specialist,
+            selectedLocation,
+            mode,
+            user_id
+        } = this.state;
 
-            if (!availabilityResponse.data.available) {
-                alert('This time slot is already booked. Please select a different time.');
-                return;
-            }
-
-            // Create appointment data with mode included
-            const appointmentData = {
-                doctor_id: doctorId,
-                user_id: this.state.user_id,
-                patient_name: this.state.patientName,
-                gender: this.state.gender,
-                age: parseInt(this.state.age),
-                date: this.state.date,
-                time: this.state.time,
-                phone_number: this.state.phoneNumber,
-                address: this.state.address,
-                specialist: this.state.specialist,
-                location: this.state.selectedLocation,
-                mode: this.state.mode  // Add mode to the request payload
-            };
-
-            // Debug log to verify data being sent
-            console.log('Sending appointment data:', appointmentData);
-
-            const response = await axios.post('http://localhost:3009/api/appointments', appointmentData, {
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            });
-
-            if (response.status === 201 || response.status === 200) {
-                this.setState(prevState => ({
-                    appointmentsList: [...prevState.appointmentsList, {
-                        id: response.data.id,
-                        ...appointmentData,
-                        doctorName: selectedDoctor.name,
-                        isFavourite: false,
-                    }],
-                    patientName: '',
-                    gender: '',
-                    age: '',
-                    phoneNumber: '',
-                    address: '',
-                    date: '',
-                    mode: ''  // Reset mode after successful booking
-                }), () => {
-                    alert(`Appointment booked successfully with Dr. ${selectedDoctor.name}`);
-                    this.props.history.push('/services');
-                });
-            }
-        } catch (error) {
-            console.error('Error details:', {
-                message: error.message,
-                response: error.response?.data,
-                status: error.response?.status
-            });
-            alert(`Failed to book appointment: ${error.response?.data?.message || error.message}`);
+        // Validate form data
+        if (!patientName || !gender || !age || !date || !time || !mode || !user_id) {
+            throw new Error('Please fill all required fields');
         }
+
+        const appointmentData = {
+            doctor_id: doctorId,
+            user_id,
+            patient_name: patientName,
+            gender,
+            age: parseInt(age),
+            date,
+            time,
+            phone_number: phoneNumber,
+            address,
+            specialist,
+            location: selectedLocation,
+            mode
+        };
+
+        const response = await fetch('http://localhost:3009/api/appointments', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${Cookies.get('jwt_token')}`
+            },
+            body: JSON.stringify(appointmentData)
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            alert('Appointment booked successfully!');
+            // Redirect to services page instead of booking history
+            this.props.history.push('/services');
+        } else {
+            throw new Error(data.error || 'Failed to book appointment');
+        }
+
+    } catch (error) {
+        console.error('Booking error:', error);
+        this.setState({
+            error: error.message
+        });
+        alert(error.message);
     }
-}
+};
 
   renderDoctorResults = () => {
     const { isLoading, error, noDoctorsFound, doctorResults } = this.state;

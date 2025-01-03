@@ -157,10 +157,10 @@ const BookingHistory = () => {
                                     <div className="video-call-section">
                                         {isAppointmentTime(appointment.date, appointment.time) ? (
                                             <Link 
-                                                to={`/video-consultation/${appointment.id}`}
-                                                className="join-video-btn active"
+                                                to={`/video-consultation/${appointment.meeting_id}`}
+                                                className="join-call-button"
                                             >
-                                                Join Video Consultation
+                                                Join Video Call
                                             </Link>
                                         ) : (
                                             <button

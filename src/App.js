@@ -1,3 +1,4 @@
+import React from 'react';
 import { BrowserRouter as Router, Route, Switch, Redirect } from 'react-router-dom';
 import UserLogin from './components/UserLogin/UserLogin';
 import UserSignUp from './components/UserSignUp/UserSignUp';
@@ -10,6 +11,7 @@ import Appointments from './components/Appointments';
 import Cookies from 'js-cookie';
 import Profile from './components/Profile';
 import VideoConsultation from './components/VideoConsultation';
+import VideoRoom from './components/VideoRoom';
 
 import './App.css';
 
@@ -49,6 +51,8 @@ const App = () => {
           <Route exact path="/">
             {Cookies.get('jwt_token') ? <Redirect to="/home" /> : <Redirect to="/login" />}
           </Route>
+          <Route exact path="/doctor/video-room/:meeting_id" component={VideoRoom} />
+          <Route exact path="/video-consultation/:meeting_id" component={VideoRoom} />
         </Switch>
       </Router>
     </div>
