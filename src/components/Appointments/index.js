@@ -6,6 +6,37 @@ import AppointmentItem from '../AppointmentItem'
 import './index.css'
 import { withRouter } from 'react-router-dom';
 
+const generateTimeSlots = () => {
+    const slots = [];
+    const startTime = 10; // 10 AM
+    const endTime = 20;   // 8 PM
+    
+    for (let hour = startTime; hour < endTime; hour++) {
+        // Skip 13:00-14:00 (lunch break)
+        if (hour === 13) continue;
+        
+        // Convert to 12-hour format
+        const period = hour >= 12 ? 'PM' : 'AM';
+        const displayHour = hour > 12 ? hour - 12 : hour;
+        
+        // Add :00 slot
+        const time1 = `${displayHour.toString().padStart(2, '0')}:00 ${period}`;
+        slots.push({
+            value: `${hour.toString().padStart(2, '0')}:00`,
+            label: time1
+        });
+        
+        // Add :30 slot
+        const time2 = `${displayHour.toString().padStart(2, '0')}:30 ${period}`;
+        slots.push({
+            value: `${hour.toString().padStart(2, '0')}:30`,
+            label: time2
+        });
+    }
+    
+    return slots;
+};
+
 class Appointments extends Component {
   state = {
 
@@ -30,6 +61,7 @@ class Appointments extends Component {
     error: null,
     time: '',
     mode: '',
+    timeSlots: generateTimeSlots(),
   }
 
   componentDidMount() {
@@ -483,7 +515,7 @@ class Appointments extends Component {
   };
 
   render() {
-    const {appointmentsList, patientName,gender ,age , date,phoneNumber,address , filterBtn, isStared, specialist, locations, selectedLocation, doctorResults, noDoctorsFound, isLoading, error, time, mode} = this.state
+    const {appointmentsList, patientName,gender ,age , date,phoneNumber,address , filterBtn, isStared, specialist, locations, selectedLocation, doctorResults, noDoctorsFound, isLoading, error, time, mode, timeSlots} = this.state
     const stared = isStared ? 'if-selected' : 'selected-button'
     console.log(mode)
     return (
@@ -577,16 +609,20 @@ class Appointments extends Component {
               <label className="label" htmlFor="time">
                 TIME (10:00 AM - 8:00 PM)
               </label>
-              <input
-                value={time}
-                type="time"
-                className="input"
-                onChange={this.handleTimeChange}
+              <select
                 id="time"
-                min="10:00"
-                max="20:00"
+                className="input"
+                value={this.state.time}
+                onChange={(e) => this.setState({ time: e.target.value })}
                 required
-              />
+              >
+                <option value="">Select a time slot</option>
+                {timeSlots.map((slot) => (
+                  <option key={slot.value} value={slot.value}>
+                    {slot.label}
+                  </option>
+                ))}
+              </select>
               <br />
               <label htmlFor="phone" className="label">
                 Phone Number

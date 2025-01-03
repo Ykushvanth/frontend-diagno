@@ -56,33 +56,20 @@ class SignUp extends Component {
 
     onSubmitForm = async (event) => {
         event.preventDefault();
-        const { username, firstname, lastname, email, phoneNumber, dateOfBirth, password, gender } = this.state;
-
         try {
             const response = await fetch("http://localhost:3009/api/signup", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "Accept": "application/json"
                 },
-                body: JSON.stringify({
-                    username,
-                    firstname,
-                    lastname,
-                    email,
-                    phoneNumber,
-                    dateOfBirth,
-                    password,
-                    gender
-                })
+                body: JSON.stringify(this.state),
             });
 
             const data = await response.json();
-            
+
             if (response.ok) {
-                // Redirect to login page on successful signup
-                // this.props.history.push('/login');
-                this.onSubmitSuccess(data)
+                alert('Account created successfully! Please login.');
+                this.props.history.replace('/login');
             } else {
                 this.setState({
                     showError: true,
@@ -93,7 +80,7 @@ class SignUp extends Component {
             console.error('Signup error:', error);
             this.setState({
                 showError: true,
-                errorMsg: 'Connection error. Please check your internet connection and try again.'
+                errorMsg: 'Connection error. Please try again.'
             });
         }
     };
