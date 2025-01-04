@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 import Cookies from 'js-cookie';
+import Header from "../Header/Header";
 // import Header from '../Header';
 import './index.css';
 import { Link } from 'react-router-dom';
@@ -95,7 +96,7 @@ const BookingHistory = () => {
 
     return (
         <div className="page-wrapper">
-            {/* <Header /> */}
+            { <Header /> }
             <div className="booking-container">
                 <div className="booking-header">
                     <h1>My Appointments</h1>

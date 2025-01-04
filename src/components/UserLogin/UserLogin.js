@@ -20,18 +20,12 @@ class LoginForm extends Component {
     // Save token to cookies
     Cookies.set('jwt_token', data.jwt_token, {
       expires: 30,
-      path: '/',
+    
     })
     let id = data.user.id;
-    // let patientname = data.firstname;
-    // let age = data.age;
-    // let phoneNumber = data.phonenumber;
-    // let gender = data.gender;
-    // Save user data to localStorage
     localStorage.setItem('userDetails',JSON.stringify(data.user))
     localStorage.setItem('userData', JSON.stringify(id))
-    
-    history.replace('/')
+    history.push("/")
   }
 
   submitForm = async event => {

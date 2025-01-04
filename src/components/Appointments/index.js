@@ -318,30 +318,9 @@ class Appointments extends Component {
         } else {
           this.setState({ error: 'Failed to fetch doctors' , noDoctorsFound: true});
         }
-        // Check if response is ok
-        // if (!response.ok) {
-        //     throw new Error(`HTTP error! status: ${response.status}`);
-        // }
         
-        // const contentType = response.headers.get("content-type");
-        // if (!contentType || !contentType.includes("application/json")) {
-        //     throw new Error("Received non-JSON response from server");
-        // }
 
-        // const data = await response.json();
-        // console.log('Response data:', data);
-
-        // if (data.success && data.doctors.length > 0) {
-          
-        //     this.setState({
-        //         doctorResults: data.doctors,
-        //         noDoctorsFound: false
-        //     });
-        // } else {
-        //     this.setState({
-        //         noDoctorsFound: true
-        //     });
-        // }
+       
     } catch (error) {
         console.error('Detailed error:', error);
         this.setState({
@@ -624,14 +603,7 @@ class Appointments extends Component {
               <label htmlFor="gender" className="label">
                 Gender
               </label>
-              {/* <input
-                value={title}
-                type="text"
-                id="gender"
-                className="input"
-                placeholder="Title"
-                onChange={this.titleFun}
-              /> */}
+              
                 <select onChange={this.gender} className='input' id="gender" name="gender" required>
                 <option value=""  selected>Select gender</option>
                 <option  defaultChecked value="male" checked>Male</option>
@@ -758,21 +730,8 @@ class Appointments extends Component {
             />
           </div>
           <hr className="horizontal-line" />
-          {/* <div className="heading-button-container">
-            <h1 className="list-heading">Appointments</h1>
-            <button type="button" className={stared} onClick={this.filterCheck}>
-              Starred
-            </button>
-          </div> */}
-          {/* <ul className="unorder-list">
-            {appointmentsList.map(eachValue => (
-              <AppointmentItem
-                key={eachValue.id}
-                appointmentsDetails={eachValue}
-                selectFavourite={this.selectFavourite}
-              />
-            ))}
-          </ul> */}
+          
+         
         </div>
         <div className="doctor-results-container">
           {this.renderDoctorResults()}

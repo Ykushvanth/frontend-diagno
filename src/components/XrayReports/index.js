@@ -20,7 +20,7 @@ const languages = [
     { id: "punjabi", language: "Punjabi / ਪੰਜਾਬੀ" }
 ];
 
-class XrayReport extends Component {
+class XrayReports extends Component {
     state = {
         languages: languages,
         selectedLanguage: "english",
@@ -92,7 +92,7 @@ class XrayReport extends Component {
         formData.append('fileType', 'xray');
 
         try {
-            const response = await axios.post('https://main-diagno-db-3.onrender.com/upload', formData, {
+            const response = await axios.post('http://localhost:3009/upload', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
 
@@ -279,4 +279,4 @@ class XrayReport extends Component {
     }
 }
 
-export default XrayReport;
+export default XrayReports;

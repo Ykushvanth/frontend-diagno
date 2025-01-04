@@ -106,10 +106,8 @@ const Profile = () => {
                     <div>{userDetails.gender}</div>
                 </div>
             </div>
-        </div>
-        
+        </div>     
         </>
-       
     );
 };
 

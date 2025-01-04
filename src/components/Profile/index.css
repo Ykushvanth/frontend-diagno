@@ -20,6 +20,7 @@ body {
     background: linear-gradient(145deg, #ffffff, #f5f7fa);
     border-radius: 20px;
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    margin-top: 120px;
 }
 
 .profile-image-section {

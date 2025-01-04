@@ -6,9 +6,9 @@ import Home from './components/Home/Home';
 import AboutUs from './components/Aboutus/Aboutus';
 import Services from './components/services/services';
 import Analyse from './components/AnalyseReports/Analyse';
+import XrayReports from './components/XrayReports';
 import BookingHistory from './components/BookingHistory';
 import Appointments from './components/Appointments';
-import XrayReport from './components/XrayReport';
 import Cookies from 'js-cookie';
 import Profile from './components/Profile';
 import VideoConsultation from './components/VideoConsultation';
@@ -46,7 +46,7 @@ const App = () => {
           <PrivateRoute exact path="/about-us" component={AboutUs} />
           <PrivateRoute exact path="/services" component={Services} />
           <Route exact path="/appointments" component={Appointments} />
-          <Route exact path="/x-ray-reports" component={XrayReport} />
+          <Route exact path="/x-ray-reports" component={XrayReports} />
           <Route exact path="/booking-history" component={BookingHistory} />
           <PrivateRoute exact path="/analyse-report" component={Analyse} />
           <Route 
@@ -58,7 +58,7 @@ const App = () => {
             }}
           />
           <Route exact path="/">
-            {Cookies.get('jwt_token') ? <Redirect to="/home" /> : <Redirect to="/login" />}
+            {Cookies.get('jwt_token') ? <Redirect to="/" /> : <Redirect to="/login" />}
           </Route>
           <Route exact path="/doctor/video-room/:meeting_id" component={VideoRoom} />
           <Route exact path="/video-consultation/:meeting_id" component={VideoRoom} />
