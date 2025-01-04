@@ -8,6 +8,7 @@ import Services from './components/services/services';
 import Analyse from './components/AnalyseReports/Analyse';
 import BookingHistory from './components/BookingHistory';
 import Appointments from './components/Appointments';
+import XrayReport from './components/XrayReport';
 import Cookies from 'js-cookie';
 import Profile from './components/Profile';
 import VideoConsultation from './components/VideoConsultation';
@@ -45,6 +46,7 @@ const App = () => {
           <PrivateRoute exact path="/about-us" component={AboutUs} />
           <PrivateRoute exact path="/services" component={Services} />
           <Route exact path="/appointments" component={Appointments} />
+          <Route exact path="/x-ray-reports" component={XrayReport} />
           <Route exact path="/booking-history" component={BookingHistory} />
           <PrivateRoute exact path="/analyse-report" component={Analyse} />
           <Route path="/video-consultation/:appointmentId" component={VideoConsultation} />
