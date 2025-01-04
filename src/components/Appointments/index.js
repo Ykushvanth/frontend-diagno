@@ -503,6 +503,76 @@ class Appointments extends Component {
     );
   };
 
+  handleSubmit = async (event) => {
+    event.preventDefault();
+    
+    const {
+        patientName,
+        gender,
+        age,
+        date,
+        time,
+        phoneNumber,
+        address,
+        specialist,
+        selectedLocation,
+        mode,
+        user_id
+    } = this.state;
+
+    // Debug log
+    console.log('Sending appointment data:', {
+        doctor_id: this.state.selectedDoctor,
+        user_id,
+        patient_name: patientName,
+        gender,
+        age,
+        date,
+        time,
+        phone_number: phoneNumber,
+        address,
+        specialist,
+        location: selectedLocation,
+        mode
+    });
+
+    try {
+        const response = await fetch('http://localhost:3009/api/appointments', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                doctor_id: this.state.selectedDoctor,
+                user_id,
+                patient_name: patientName,
+                gender,
+                age,
+                date,
+                time,
+                phone_number: phoneNumber,
+                address,
+                specialist,
+                location: selectedLocation,
+                mode
+            })
+        });
+
+        const data = await response.json();
+        console.log('Appointment response:', data); // Debug log
+
+        if (response.ok) {
+            alert('Appointment booked successfully!');
+            // Handle success (e.g., redirect or clear form)
+        } else {
+            alert(data.error || 'Failed to book appointment');
+        }
+    } catch (error) {
+        console.error('Appointment booking error:', error);
+        alert('Failed to book appointment. Please try again.');
+    }
+};
+
   render() {
     const {appointmentsList, patientName,gender ,age , date,phoneNumber,address , filterBtn, isStared, specialist, locations, selectedLocation, doctorResults, noDoctorsFound, isLoading, error, time, mode, timeSlots} = this.state
     const stared = isStared ? 'if-selected' : 'selected-button'

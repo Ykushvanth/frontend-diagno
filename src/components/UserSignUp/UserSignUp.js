@@ -57,6 +57,8 @@ class SignUp extends Component {
     onSubmitForm = async (event) => {
         event.preventDefault();
         try {
+            console.log('Sending signup data:', this.state); // Debug log
+
             const response = await fetch("http://localhost:3009/api/signup", {
                 method: "POST",
                 headers: {
@@ -65,7 +67,9 @@ class SignUp extends Component {
                 body: JSON.stringify(this.state),
             });
 
+            console.log('Response status:', response.status); // Debug log
             const data = await response.json();
+            console.log('Response data:', data); // Debug log
 
             if (response.ok) {
                 alert('Account created successfully! Please login.');
