@@ -41,7 +41,7 @@ const App = () => {
             {Cookies.get('jwt_token') ? <Redirect to="/home" /> : <UserLogin />}
           </Route>
           <Route exact path="/signup" component={UserSignUp} />
-          <PrivateRoute exact path="/home" component={Home} />
+          <PrivateRoute exact path="/" component={Home} />
           <PrivateRoute exact path="/profile" component={Profile} />
           <PrivateRoute exact path="/about-us" component={AboutUs} />
           <PrivateRoute exact path="/services" component={Services} />
@@ -49,7 +49,14 @@ const App = () => {
           <Route exact path="/x-ray-reports" component={XrayReport} />
           <Route exact path="/booking-history" component={BookingHistory} />
           <PrivateRoute exact path="/analyse-report" component={Analyse} />
-          <Route path="/video-consultation/:appointmentId" component={VideoConsultation} />
+          <Route 
+            exact 
+            path="/video-consultation/:meeting_id" 
+            render={(props) => {
+              console.log('Meeting ID from URL:', props.match.params.meeting_id);
+              return <VideoConsultation {...props} />;
+            }}
+          />
           <Route exact path="/">
             {Cookies.get('jwt_token') ? <Redirect to="/home" /> : <Redirect to="/login" />}
           </Route>

@@ -1,12 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useParams, useHistory } from 'react-router-dom';
 import io from 'socket.io-client';
 import './index.css';
 
-const VideoConsultation = ({ appointmentId, doctorId, userId }) => {
+const VideoConsultation = () => {
+    const { meeting_id } = useParams();
+    const history = useHistory();
     const [localStream, setLocalStream] = useState(null);
     const [remoteStream, setRemoteStream] = useState(null);
-    const [isConnected, setIsConnected] = useState(false);
     const [error, setError] = useState(null);
+    const [isConnected, setIsConnected] = useState(false);
 
     const localVideoRef = useRef();
     const remoteVideoRef = useRef();
@@ -14,16 +17,121 @@ const VideoConsultation = ({ appointmentId, doctorId, userId }) => {
     const socketRef = useRef();
 
     useEffect(() => {
-        // Connect to signaling server
-        socketRef.current = io('http://localhost:3009');
+        let stream = null;
 
-        // Initialize WebRTC
-        initializeWebRTC();
+        const init = async () => {
+            try {
+                // 1. Get local media stream
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: true,
+                    audio: true
+                });
+                
+                console.log('Patient: Local stream obtained');
+                setLocalStream(stream);
+                if (localVideoRef.current) {
+                    localVideoRef.current.srcObject = stream;
+                }
 
-        // Cleanup on component unmount
+                // 2. Create peer connection
+                const pc = new RTCPeerConnection({
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        {
+                            urls: 'turn:numb.viagenie.ca',
+                            username: 'webrtc@live.com',
+                            credential: 'muazkh'
+                        }
+                    ]
+                });
+
+                // Add local stream tracks to peer connection
+                stream.getTracks().forEach(track => {
+                    console.log('Patient: Adding track to peer connection');
+                    pc.addTrack(track, stream);
+                });
+
+                // Handle incoming stream
+                pc.ontrack = (event) => {
+                    console.log('Patient: Received remote track');
+                    if (remoteVideoRef.current && event.streams[0]) {
+                        remoteVideoRef.current.srcObject = event.streams[0];
+                    }
+                };
+
+                // ICE candidate handling
+                pc.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        console.log('Patient: Sending ICE candidate');
+                        socketRef.current.emit('ice-candidate', {
+                            candidate: event.candidate,
+                            meeting_id
+                        });
+                    }
+                };
+
+                pc.oniceconnectionstatechange = () => {
+                    console.log('Patient ICE Connection State:', pc.iceConnectionState);
+                };
+
+                peerConnectionRef.current = pc;
+
+                // 3. Set up socket connection
+                socketRef.current = io('http://localhost:3009', {
+                    transports: ['websocket']
+                });
+
+                socketRef.current.on('connect', () => {
+                    console.log('Patient: Socket connected');
+                    socketRef.current.emit('join-room', { meeting_id, isDoctor: false });
+                });
+
+                socketRef.current.on('user-connected', async () => {
+                    console.log('Patient: Doctor connected, creating offer');
+                    try {
+                        const offer = await pc.createOffer({
+                            offerToReceiveAudio: true,
+                            offerToReceiveVideo: true
+                        });
+                        await pc.setLocalDescription(offer);
+                        console.log('Patient: Sending offer');
+                        socketRef.current.emit('offer', { offer, meeting_id });
+                    } catch (err) {
+                        console.error('Patient: Error creating offer:', err);
+                    }
+                });
+
+                socketRef.current.on('answer', async (answer) => {
+                    console.log('Patient: Received answer');
+                    try {
+                        await pc.setRemoteDescription(new RTCSessionDescription(answer));
+                    } catch (err) {
+                        console.error('Patient: Error setting remote description:', err);
+                    }
+                });
+
+                socketRef.current.on('ice-candidate', async (candidate) => {
+                    try {
+                        if (pc.remoteDescription) {
+                            console.log('Patient: Adding ICE candidate');
+                            await pc.addIceCandidate(new RTCIceCandidate(candidate));
+                        }
+                    } catch (err) {
+                        console.error('Patient: Error adding ICE candidate:', err);
+                    }
+                });
+
+            } catch (err) {
+                console.error('Patient: Error initializing:', err);
+                setError(err.message);
+            }
+        };
+
+        init();
+
         return () => {
-            if (localStream) {
-                localStream.getTracks().forEach(track => track.stop());
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
             }
             if (peerConnectionRef.current) {
                 peerConnectionRef.current.close();
@@ -32,127 +140,55 @@ const VideoConsultation = ({ appointmentId, doctorId, userId }) => {
                 socketRef.current.disconnect();
             }
         };
-    }, []);
+    }, [meeting_id]);
 
-    const initializeWebRTC = async () => {
-        try {
-            // Get local media stream
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: true,
-                audio: true
-            });
-            setLocalStream(stream);
-            localVideoRef.current.srcObject = stream;
-
-            // Initialize peer connection
-            const configuration = {
-                iceServers: [
-                    { urls: 'stun:stun.l.google.com:19302' },
-                    {
-                        urls: 'turn:your-turn-server.com',
-                        username: 'username',
-                        credential: 'credential'
-                    }
-                ]
-            };
-
-            peerConnectionRef.current = new RTCPeerConnection(configuration);
-
-            // Add local stream to peer connection
-            stream.getTracks().forEach(track => {
-                peerConnectionRef.current.addTrack(track, stream);
-            });
-
-            // Handle incoming remote stream
-            peerConnectionRef.current.ontrack = (event) => {
-                setRemoteStream(event.streams[0]);
-                remoteVideoRef.current.srcObject = event.streams[0];
-            };
-
-            // Handle ICE candidates
-            peerConnectionRef.current.onicecandidate = (event) => {
-                if (event.candidate) {
-                    socketRef.current.emit('ice-candidate', {
-                        candidate: event.candidate,
-                        appointmentId
-                    });
-                }
-            };
-
-            // Socket event handlers
-            socketRef.current.on('offer', handleOffer);
-            socketRef.current.on('answer', handleAnswer);
-            socketRef.current.on('ice-candidate', handleIceCandidate);
-
-            // Join appointment room
-            socketRef.current.emit('join-room', { appointmentId, userId, doctorId });
-
-        } catch (err) {
-            setError('Failed to access camera/microphone: ' + err.message);
-            console.error('WebRTC initialization error:', err);
+    const handleEndCall = () => {
+        if (localStream) {
+            localStream.getTracks().forEach(track => track.stop());
         }
+        if (peerConnectionRef.current) {
+            peerConnectionRef.current.close();
+        }
+        socketRef.current.disconnect();
+        history.push('/');
     };
 
-    const handleOffer = async (offer) => {
-        try {
-            await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(offer));
-            const answer = await peerConnectionRef.current.createAnswer();
-            await peerConnectionRef.current.setLocalDescription(answer);
-            socketRef.current.emit('answer', { answer, appointmentId });
-        } catch (err) {
-            console.error('Error handling offer:', err);
-        }
-    };
-
-    const handleAnswer = async (answer) => {
-        try {
-            await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(answer));
-        } catch (err) {
-            console.error('Error handling answer:', err);
-        }
-    };
-
-    const handleIceCandidate = async (iceCandidate) => {
-        try {
-            await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(iceCandidate));
-        } catch (err) {
-            console.error('Error handling ICE candidate:', err);
-        }
-    };
+    if (error) {
+        return (
+            <div className="video-consultation-container error-state">
+                <div className="error-container">
+                    <h2>Error</h2>
+                    <p>{error}</p>
+                    <button onClick={() => history.push('/')}>
+                        Return Home
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="video-consultation-container">
             <div className="video-grid">
-                <div className="video-wrapper local">
-                    <video
-                        ref={localVideoRef}
-                        autoPlay
-                        playsInline
-                        muted
-                        className="local-video"
-                    />
-                    <div className="controls">
-                        <button onClick={() => {/* Toggle mic */}}>
-                            Mic
-                        </button>
-                        <button onClick={() => {/* Toggle camera */}}>
-                            Camera
-                        </button>
-                        <button onClick={() => {/* End call */}}>
-                            End
-                        </button>
-                    </div>
-                </div>
-                <div className="video-wrapper remote">
-                    <video
-                        ref={remoteVideoRef}
-                        autoPlay
-                        playsInline
-                        className="remote-video"
-                    />
-                </div>
+                <video
+                    ref={remoteVideoRef}
+                    autoPlay
+                    playsInline
+                    className="remote-video"
+                />
+                <video
+                    ref={localVideoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className="local-video"
+                />
             </div>
-            {error && <div className="error-message">{error}</div>}
+            <div className="controls">
+                <button className="end-call" onClick={handleEndCall}>
+                    End Call
+                </button>
+            </div>
         </div>
     );
 };
