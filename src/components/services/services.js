@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useHistory } from 'react-router-dom';
 import Header from '../Header/Header';
+import { FaUserMd } from "react-icons/fa";
 import { FaXRay, FaFileMedical, FaArrowRight, FaCheckCircle, FaClock, FaShieldAlt } from 'react-icons/fa';
 import { BsGraphUp } from 'react-icons/bs';
 import './services.css';
@@ -72,6 +73,27 @@ const Services = () => {
                 </div>
                 
                 <div className="main-icons-container">
+                <Link to="/appointments" className="icons-containers">
+                        <div className="service-content">
+                            <div className="icon-wrapper">
+                            <FaUserMd className="features-icons" />
+                            </div>
+                            <h1 className="icons-heading">Consult a Specialist</h1>
+                            <p className="icons-paragraph">
+                            Benefit from advanced consultation and customized recommendations by specialists
+                            </p>
+                            <ul className="service-features">
+                                <li><FaCheckCircle />Consult with Expert at your locality</li> 
+                                <li><FaClock />Consult at Online & Offline</li>
+                                <li><FaShieldAlt />Confidential & Secure</li>
+                            </ul>
+                            
+                            <div className="service-cta">
+                                <span>Consult Now</span>
+                                <FaArrowRight className="arrow-icon" />
+                            </div>
+                        </div>
+                    </Link>
                     <Link to="/x-ray-reports" className="icons-containers">
                         <div className="service-content">
                             <div className="icon-wrapper">

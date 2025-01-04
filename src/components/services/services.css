@@ -156,8 +156,9 @@
 }
 
 .main-icons-container {
-    max-width: 1200px;
+    max-width: 1400px;
     margin: 0 auto;
+   
     display: flex;
     justify-content: center;
     gap: 40px;
@@ -170,7 +171,7 @@
     border-radius: 20px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
     flex: 1;
-    min-width: 320px;
+    min-width: 350px;
     max-width: 450px;
     text-decoration: none;
     color: inherit;
