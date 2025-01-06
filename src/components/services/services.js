@@ -31,7 +31,7 @@ const Services = () => {
                         </p>
                         <div className="stats-row">
                             <div className="stat-item">
-                                <span className="stat-number">99%</span>
+                                <span className="stat-number">96%</span>
                                 <span className="stat-label">Accuracy</span>
                             </div>
                             <div className="stat-item">
@@ -48,7 +48,7 @@ const Services = () => {
                         <div className="image-wrapper">
                             <img 
                                 className="second-container-image" 
-                                src="https://res.cloudinary.com/dbroxheos/image/upload/v1727800728/Half_design_794_x_1012_px_flwz3e.png" 
+                                src="https://res.cloudinary.com/dbroxheos/image/upload/v1736185599/1_z6i5lp.jpg" 
                                 alt="Services Illustration"
                             />
                             <div className="floating-card card-1">
@@ -57,7 +57,7 @@ const Services = () => {
                             </div>
                             <div className="floating-card card-2">
                                 <BsGraphUp className="card-icon" />
-                                <span>99% Accuracy</span>
+                                <span>96% Accuracy</span>
                             </div>
                         </div>
                     </div>

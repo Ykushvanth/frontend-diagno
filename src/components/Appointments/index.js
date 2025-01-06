@@ -103,7 +103,7 @@ class Appointments extends Component {
 
   fetchLocations = async () => {
     try {
-      const response = await axios.get('https://backend-diagno.onrender.com/api/doctor-locations');
+      const response = await axios.get('http://localhost:3009/api/doctor-locations');
       console.log(response)
       console.log("response")
       this.setState({ locations: response.data });
@@ -158,7 +158,7 @@ class Appointments extends Component {
         console.log('Submitting appointment data:', appointmentData); // Debug log
 
         const response = await axios.post(
-            'https://backend-diagno.onrender.com/api/appointments',
+            'http://localhost:3009/api/appointments',
             appointmentData
         );
 
@@ -307,7 +307,7 @@ class Appointments extends Component {
     try {
         // Make sure this URL matches your backend exactly
 
-        const url = `https://backend-diagno.onrender.com/api/doctor-locations/getDoctors?location=${encodeURIComponent(selectedLocation)}&specialization=${encodeURIComponent(specialist)}`;
+        const url = `http://localhost:3009/api/doctor-locations/getDoctors?location=${encodeURIComponent(selectedLocation)}&specialization=${encodeURIComponent(specialist)}`;
         console.log('Fetching from URL:', url);
 
         const response = await fetch(url);
@@ -367,7 +367,7 @@ class Appointments extends Component {
             mode
         };
 
-        const response = await fetch('https://backend-diagno.onrender.com/api/appointments', {
+        const response = await fetch('http://localhost:3009/api/appointments', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -516,7 +516,7 @@ class Appointments extends Component {
     });
 
     try {
-        const response = await fetch('https://backend-diagno.onrender.com/api/appointments', {
+        const response = await fetch('http://localhost:3009/api/appointments', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

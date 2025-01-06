@@ -62,7 +62,7 @@ const AboutUs = () => {
                     animate={{ opacity: 1 }}
                     transition={{ duration: 0.8, delay: 0.2 }}
                 >
-                    <img src="https://res.cloudinary.com/dbroxheos/image/upload/v1727454124/Untitled_design_1_nyltzm.png" alt="Healthcare AI" />
+                    <img src="https://res.cloudinary.com/dbroxheos/image/upload/v1736185368/jjj_mgdhro.png" alt="Healthcare AI" />
                 </motion.div>
             </div>
 

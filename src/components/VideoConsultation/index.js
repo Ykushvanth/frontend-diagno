@@ -2,14 +2,18 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useHistory } from 'react-router-dom';
 import io from 'socket.io-client';
 import './index.css';
+import { FaMicrophone, FaMicrophoneSlash, FaVideo, FaVideoSlash, FaPhone } from 'react-icons/fa';
 
-const VideoConsultation = () => {
+const VideoConsultation = ({ isDoctor }) => {
     const { meeting_id } = useParams();
     const history = useHistory();
     const [localStream, setLocalStream] = useState(null);
     const [remoteStream, setRemoteStream] = useState(null);
     const [error, setError] = useState(null);
     const [isConnected, setIsConnected] = useState(false);
+    const [isMuted, setIsMuted] = useState(false);
+    const [isVideoOff, setIsVideoOff] = useState(false);
+    const [connectionStatus, setConnectionStatus] = useState('Connecting...');
 
     const localVideoRef = useRef();
     const remoteVideoRef = useRef();
@@ -153,13 +157,31 @@ const VideoConsultation = () => {
         history.push('/');
     };
 
+    const toggleMute = () => {
+        if (localStream) {
+            localStream.getAudioTracks().forEach(track => {
+                track.enabled = !track.enabled;
+            });
+            setIsMuted(!isMuted);
+        }
+    };
+
+    const toggleVideo = () => {
+        if (localStream) {
+            localStream.getVideoTracks().forEach(track => {
+                track.enabled = !track.enabled;
+            });
+            setIsVideoOff(!isVideoOff);
+        }
+    };
+
     if (error) {
         return (
             <div className="video-consultation-container error-state">
                 <div className="error-container">
-                    <h2>Error</h2>
+                    <h2>Connection Error</h2>
                     <p>{error}</p>
-                    <button onClick={() => history.push('/')}>
+                    <button className="end-call" onClick={() => history.push('/')}>
                         Return Home
                     </button>
                 </div>
@@ -169,24 +191,54 @@ const VideoConsultation = () => {
 
     return (
         <div className="video-consultation-container">
-            <div className="video-grid">
-                <video
-                    ref={remoteVideoRef}
-                    autoPlay
-                    playsInline
-                    className="remote-video"
-                />
-                <video
-                    ref={localVideoRef}
-                    autoPlay
-                    playsInline
-                    muted
-                    className="local-video"
-                />
+            <div className="consultation-header">
+                <div className="consultation-info">
+                    <h2>{isDoctor ? 'Patient Consultation' : 'Doctor Consultation'}</h2>
+                    <div className="consultation-status">
+                        <div className="status-indicator"></div>
+                        <span>{connectionStatus}</span>
+                    </div>
+                </div>
+                <div className="meeting-id">
+                    Meeting ID: {meeting_id}
+                </div>
             </div>
+
+            <div className="video-grid">
+                <div className="main-video-container">
+                    <video
+                        ref={remoteVideoRef}
+                        autoPlay
+                        playsInline
+                        className="remote-video"
+                    />
+                </div>
+                <div className="local-video-container">
+                    <video
+                        ref={localVideoRef}
+                        autoPlay
+                        playsInline
+                        muted
+                        className="local-video"
+                    />
+                </div>
+            </div>
+
             <div className="controls">
-                <button className="end-call" onClick={handleEndCall}>
-                    End Call
+                <button 
+                    className="control-button mic-button"
+                    onClick={toggleMute}
+                >
+                    {isMuted ? <FaMicrophoneSlash /> : <FaMicrophone />}
+                </button>
+                <button 
+                    className="control-button camera-button"
+                    onClick={toggleVideo}
+                >
+                    {isVideoOff ? <FaVideoSlash /> : <FaVideo />}
+                </button>
+                <button className="control-button end-call" onClick={handleEndCall}>
+                    <FaPhone style={{ transform: 'rotate(135deg)' }} />
                 </button>
             </div>
         </div>

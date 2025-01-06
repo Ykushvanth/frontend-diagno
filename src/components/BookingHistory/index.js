@@ -5,6 +5,8 @@ import Header from "../Header/Header";
 // import Header from '../Header';
 import './index.css';
 import { Link } from 'react-router-dom';
+import jsPDF from 'jspdf';
+import { FaFilePrescription, FaDownload } from 'react-icons/fa';
 
 const formatMonth = (dateString) => {
     const date = new Date(dateString);
@@ -34,6 +36,8 @@ const BookingHistory = () => {
     const [error, setError] = useState(null);
     const [filter, setFilter] = useState('all');
     const history = useHistory();
+    const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
+    const [selectedAppointment, setSelectedAppointment] = useState(null);
 
     useEffect(() => {
         const token = Cookies.get('jwt_token');
@@ -47,7 +51,7 @@ const BookingHistory = () => {
     const fetchAppointments = async () => {
         try {
             const token = Cookies.get('jwt_token');
-            const response = await fetch('https://backend-diagno.onrender.com/booking-history', {
+            const response = await fetch('http://localhost:3009/booking-history', {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -82,6 +86,68 @@ const BookingHistory = () => {
         // Enable button 5 minutes before and up to 30 minutes after appointment time
         const timeDifferenceInMinutes = (now - appointmentDateTime) / (1000 * 60);
         return timeDifferenceInMinutes >= -5 && timeDifferenceInMinutes <= 30;
+    };
+
+    const downloadPrescription = (appointment) => {
+        const doc = new jsPDF();
+        
+        // Add header
+        doc.setFontSize(20);
+        doc.text('Medical Prescription', 105, 20, { align: 'center' });
+        
+        // Add appointment details
+        doc.setFontSize(12);
+        doc.text([
+            `Date: ${new Date(appointment.date).toLocaleDateString()}`,
+            `Patient Name: ${appointment.patient_name}`,
+            `Doctor: Dr. ${appointment.doctor_name}`,
+            `Specialist: ${appointment.specialist}`,
+            '\nPrescription:',
+            `${appointment.prescription}`
+        ], 20, 40);
+
+        // Save the PDF
+        doc.save(`prescription-${appointment.date}.pdf`);
+    };
+
+    const renderPrescriptionModal = () => {
+        if (!showPrescriptionModal || !selectedAppointment) return null;
+
+        return (
+            <div className="modal-overlay">
+                <div className="prescription-modal">
+                    <div className="prescription-header">
+                        <h2>Prescription Details</h2>
+                        <button 
+                            className="download-button"
+                            onClick={() => downloadPrescription(selectedAppointment)}
+                        >
+                            <FaDownload /> Download PDF
+                        </button>
+                    </div>
+                    
+                    <div className="prescription-content">
+                        <div className="prescription-info">
+                            <p><strong>Date:</strong> {new Date(selectedAppointment.date).toLocaleDateString()}</p>
+                            <p><strong>Doctor:</strong> Dr. {selectedAppointment.doctor_name}</p>
+                            <p><strong>Specialist:</strong> {selectedAppointment.specialist}</p>
+                        </div>
+                        
+                        <div className="prescription-text">
+                            <h3>Prescription:</h3>
+                            <p>{selectedAppointment.prescription || 'No prescription available'}</p>
+                        </div>
+                    </div>
+
+                    <button 
+                        className="close-button"
+                        onClick={() => setShowPrescriptionModal(false)}
+                    >
+                        Close
+                    </button>
+                </div>
+            </div>
+        );
     };
 
     if (loading) return (
@@ -154,6 +220,26 @@ const BookingHistory = () => {
                                     {appointment.location}
                                 </div>
 
+                                {appointment.prescription && (
+                                    <div className="prescription-section">
+                                        <button
+                                            className="prescription-view-btn"
+                                            onClick={() => {
+                                                setSelectedAppointment(appointment);
+                                                setShowPrescriptionModal(true);
+                                            }}
+                                        >
+                                            <FaFilePrescription /> View Prescription
+                                        </button>
+                                        <button
+                                            className="prescription-download-btn"
+                                            onClick={() => downloadPrescription(appointment)}
+                                        >
+                                            <FaDownload /> Download
+                                        </button>
+                                    </div>
+                                )}
+
                                 {appointment.mode === 'Online' && (
                                     <div className="video-call-section">
                                         {isAppointmentTime(appointment.date, appointment.time) ? (
@@ -179,6 +265,7 @@ const BookingHistory = () => {
                         </div>
                     ))}
                 </div>
+                {renderPrescriptionModal()}
             </div>
         </div>
     );
