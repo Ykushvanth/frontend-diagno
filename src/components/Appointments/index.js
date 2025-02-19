@@ -52,7 +52,7 @@ class Appointments extends Component {
     filterBtn: false,
     isStared: false,
     duplicateList: [],
-    specialist: null,
+    specialist: "General Medicine",
     locations: [],
     selectedLocation: '', 
     isFormValid: false,
@@ -66,34 +66,58 @@ class Appointments extends Component {
   }
 
   componentDidMount() {
+    // Get specialist from location state OR URL params
+    const { location, history } = this.props;
+    const params = new URLSearchParams(location.search);
+    const specialistFromParams = params.get('specialist');
+    
+    let specialist = null;
+    if (location.state && location.state.specialist) {
+        specialist = location.state.specialist;
+    } else if (specialistFromParams) {
+        specialist = specialistFromParams;
+    }
+
+    if (specialist) {
+        this.setState({ specialist });
+    }
+
+    // Get user ID from localStorage
+    const userData = localStorage.getItem('userData');
+    let userId = null;
+    
+    try {
+        // Parse userData if it exists
+        if (userData) {
+            userId = JSON.parse(userData);
+            console.log('Found user ID:', userId); // Debug log
+        }
+    } catch (error) {
+        console.error('Error parsing user data:', error);
+    }
+
     // Check for default details
     const userConfirmed = window.confirm(
         'Do you want to use default details? Click OK for default or Cancel to enter your own.'
     );
 
-    
     if (userConfirmed) {
-        const userDetails = (localStorage.getItem('userDetails'));
+        const userDetails = localStorage.getItem('userDetails');
         
         if (userDetails) {
             const user = JSON.parse(userDetails);
-            const userId = JSON.parse(localStorage.getItem('userData'));
             this.setState({
-                patientName: user.firstname                ,
-                phoneNumber: user.phoneNumber ,
+                patientName: user.firstname,
+                phoneNumber: user.phoneNumber,
                 gender: "Male",
-                age:24,
-                user_id : userId
+                age: 24,
+                user_id: userId // Set the user_id in state
+            }, () => {
+                console.log('Updated state with user details:', this.state); // Debug log
             });
         } else {
             alert('No default details found in localStorage.');
         }
-    }
-
-    // Get specialist from location state
-    const { location } = this.props;
-    if (location && location.state && location.state.specialist) {
-        this.setState({ specialist: location.state.specialist });
     }
 
     // Fetch available locations
@@ -103,7 +127,7 @@ class Appointments extends Component {
 
   fetchLocations = async () => {
     try {
-      const response = await axios.get('https://backend-diagno.onrender.com/api/doctor-locations');
+      const response = await axios.get('http://localhost:3009/api/doctor-locations');
       console.log(response)
       console.log("response")
       this.setState({ locations: response.data });
@@ -155,10 +179,11 @@ class Appointments extends Component {
             mode // Include mode in the request payload
         };
 
+
         console.log('Submitting appointment data:', appointmentData); // Debug log
 
         const response = await axios.post(
-            'https://backend-diagno.onrender.com/api/appointments',
+            'http://localhost:3009/api/appointments',
             appointmentData
         );
 
@@ -283,17 +308,14 @@ class Appointments extends Component {
 
   handleProceed = async () => {
     if (!this.validateForm()) {
-      alert('Please fill in all fields before proceeding');
-      return;
+        alert('Please fill in all fields before proceeding');
+        return;
     }
 
     const { selectedLocation, specialist } = this.state;
     
-    // Debug logs
-    console.log('Making request with:', { selectedLocation, specialist });
-    
-    if (!selectedLocation) {
-        alert('Please select a location');
+    if (!selectedLocation || !specialist) {
+        alert('Please select both location and specialist');
         return;
     }
 
@@ -305,31 +327,68 @@ class Appointments extends Component {
     });
      
     try {
-        // Make sure this URL matches your backend exactly
+        console.log('Fetching doctors with params:', {
+            location: selectedLocation,
+            specialization: specialist
+        });
 
-        const url = `https://backend-diagno.onrender.com/api/doctor-locations/getDoctors?location=${encodeURIComponent(selectedLocation)}&specialization=${encodeURIComponent(specialist)}`;
-        console.log('Fetching from URL:', url);
+        const response = await axios.get('http://localhost:3009/api/doctor-locations/getDoctors', {
+            params: {
+                location: selectedLocation,
+                specialization: specialist
+            }
+        });
 
-        const response = await fetch(url);
-        console.log(response)
-        if (response.ok) {
-          const data = await response.json();
-          this.onSuccess(data);
+        // Access the data property from the Supabase response
+        const doctors = response.data.data;
+
+        if (Array.isArray(doctors)) {
+            if (doctors.length === 0) {
+                this.setState({ 
+                    noDoctorsFound: true,
+                    error: 'No doctors found for the selected criteria'
+                });
+            } else {
+                // Map the response data to match your frontend structure
+                const formattedData = doctors.map(doctor => ({
+                    appointmentCost: doctor.appointment_cost,
+                    id: doctor.id,
+                    imageUrl: doctor.image_url,
+                    location: doctor.location,
+                    locationUrl: doctor.location_url,
+                    name: doctor.name,
+                    phoneNumber: doctor.phone_number,
+                    rating: doctor.rating,
+                    specialization: doctor.specialization,
+                    experience: doctor.experience,
+                    qualification: doctor.qualification
+                }));
+                
+                this.setState({
+                    doctorResults: formattedData,
+                    noDoctorsFound: false,
+                    error: null
+                });
+            }
         } else {
-          this.setState({ error: 'Failed to fetch doctors' , noDoctorsFound: true});
+            throw new Error('Invalid response format from server');
         }
-        
-
-       
     } catch (error) {
-        console.error('Detailed error:', error);
+        console.error('Error details:', {
+            message: error.message,
+            response: error.response?.data,
+            status: error.response?.status
+        });
+        
         this.setState({
-            error: `Failed to fetch doctor details. Please make sure the server is running.`
+            error: 'Failed to fetch doctor details. Please try again.',
+            noDoctorsFound: true,
+            doctorResults: []
         });
     } finally {
         this.setState({ isLoading: false });
     }
-  };
+};
 
   handleDoctorSelect = async (doctorId) => {
     try {
@@ -347,51 +406,74 @@ class Appointments extends Component {
             user_id
         } = this.state;
 
-        // Validate form data
-        if (!patientName || !gender || !age || !date || !time || !mode || !user_id) {
-            throw new Error('Please fill all required fields');
+        // Debug log
+        console.log('Current user_id:', user_id);
+
+        // Validate user_id
+        if (!user_id) {
+            throw new Error('User ID not found. Please login again.');
         }
 
+        // First verify if user exists and get their email
+        const userCheckResponse = await axios.get(`http://localhost:3009/api/users/${user_id}`);
+        
+        if (!userCheckResponse.data) {
+            throw new Error('User not found. Please login again.');
+        }
+
+        const userEmail = userCheckResponse.data.email;
+        if (!userEmail) {
+            throw new Error('User email not found. Please update your profile.');
+        }
+
+        // Format the appointment data
         const appointmentData = {
-            doctor_id: doctorId,
-            user_id,
+            doctor_id: parseInt(doctorId),
+            user_id: parseInt(user_id),
             patient_name: patientName,
-            gender,
-            age: parseInt(age),
-            date,
-            time,
-            phone_number: phoneNumber,
-            address,
-            specialist,
-            location: selectedLocation,
-            mode
+            gender: gender || 'Not Specified',
+            age: age ? parseInt(age) : null,
+            date: date,
+            time: time,
+            phone_number: phoneNumber || null,
+            address: address || null,
+            specialist: specialist || null,
+            location: selectedLocation || null,
+            mode: mode || 'Offline',
+            status: 'Upcoming',
+            symptoms: null,
+            prescription: null,
+            diagnosis: null,
+            notes: null,
+            email: userEmail, // Include the email
+            meeting_id: mode === 'Online' ? 
+                `meet-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` : 
+                null
         };
 
-        const response = await fetch('https://backend-diagno.onrender.com/api/appointments', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${Cookies.get('jwt_token')}`
-            },
-            body: JSON.stringify(appointmentData)
-        });
+        console.log('Sending appointment data:', appointmentData);
 
-        const data = await response.json();
+        // Create appointment
+        const response = await axios.post(
+            'http://localhost:3009/api/appointments',
+            appointmentData,
+            {
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
 
-        if (response.ok) {
+        if (response.data && response.data.success) {
             alert('Appointment booked successfully!');
-            // Redirect to services page instead of booking history
             this.props.history.push('/services');
         } else {
-            throw new Error(data.error || 'Failed to book appointment');
+            throw new Error(response.data.error || 'Failed to book appointment');
         }
 
     } catch (error) {
         console.error('Booking error:', error);
-        this.setState({
-            error: error.message
-        });
-        alert(error.message);
+        alert(error.message || 'Failed to book appointment. Please try again.');
     }
 };
 
@@ -556,6 +638,7 @@ class Appointments extends Component {
     const {appointmentsList, patientName,gender ,age , date,phoneNumber,address , filterBtn, isStared, specialist, locations, selectedLocation, doctorResults, noDoctorsFound, isLoading, error, time, mode, timeSlots} = this.state
     const stared = isStared ? 'if-selected' : 'selected-button'
     console.log(mode)
+    console.log('Rendering with locations:', locations); // Debug log
     return (
       <div className="main-appointment-bg-container">
         <div className="appointment-card-container">
@@ -581,11 +664,15 @@ class Appointments extends Component {
                   required
                 >
                   <option value="">Select a location</option>
-                  {locations.map((loc, index) => (
-                    <option key={index} value={loc.location}>
-                      {loc.location}
-                    </option>
-                  ))}
+                  {locations && locations.length > 0 ? (
+                    locations.map((loc, index) => (
+                      <option key={index} value={loc.location}>
+                        {loc.location}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="" disabled>Loading locations...</option>
+                  )}
                 </select>
               </div>
               <label htmlFor="tile" className="label">

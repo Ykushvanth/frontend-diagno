@@ -51,7 +51,22 @@ const BookingHistory = () => {
     const fetchAppointments = async () => {
         try {
             const token = Cookies.get('jwt_token');
-            const response = await fetch('https://backend-diagno.onrender.com/booking-history', {
+            const userId = JSON.parse(localStorage.getItem('userData'));
+            
+            console.log('Fetching appointments with:', {
+                userId,
+                token: token ? 'Present' : 'Missing'
+            });
+
+            if (!userId) {
+                throw new Error('User not found. Please login again.');
+            }
+
+            // Log the full URL being called
+            const url = `http://localhost:3009/api/appointments/history/${userId}`;
+            console.log('Fetching from URL:', url);
+
+            const response = await fetch(url, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -59,13 +74,24 @@ const BookingHistory = () => {
                 },
             });
 
+            console.log('Response status:', response.status);
+
             if (!response.ok) {
                 const errorData = await response.json();
+                console.error('Error response:', errorData);
                 throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
             }
 
             const data = await response.json();
-            setAppointments(data);
+            console.log('Appointments data received:', data);
+            
+            if (Array.isArray(data)) {
+                setAppointments(data);
+            } else {
+                console.error('Received non-array data:', data);
+                throw new Error('Invalid data format received');
+            }
+            
             setLoading(false);
         } catch (error) {
             console.error('Error fetching appointments:', error);
@@ -73,6 +99,11 @@ const BookingHistory = () => {
             setLoading(false);
         }
     };
+
+    // Add this useEffect to track state changes
+    useEffect(() => {
+        console.log('Current appointments state:', appointments);
+    }, [appointments]);
 
     const filteredAppointments = appointments.filter(appointment => {
         if (filter === 'all') return true;
@@ -207,10 +238,10 @@ const BookingHistory = () => {
 
                                 <div className="doctor-info">
                                     <div className="avatar">
-                                        {appointment.doctor_name.charAt(0)}
+                                        {(appointment.doctor_name || 'Doctor').charAt(0)}
                                     </div>
                                     <div>
-                                        <h3>Dr. {appointment.doctor_name}</h3>
+                                        <h3>Dr. {appointment.doctor_name || 'Doctor'}</h3>
                                         <p>{appointment.specialist}</p>
                                     </div>
                                 </div>

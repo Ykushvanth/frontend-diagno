@@ -4,34 +4,33 @@ import io from 'socket.io-client';
 import './index.css';
 import { FaMicrophone, FaMicrophoneSlash, FaVideo, FaVideoSlash, FaPhone } from 'react-icons/fa';
 
-const VideoConsultation = ({ isDoctor }) => {
+const VideoConsultation = () => {
     const { meeting_id } = useParams();
     const history = useHistory();
+
+    // Refs
+    const localVideoRef = useRef(null);
+    const remoteVideoRef = useRef(null);
+    const socketRef = useRef(null);
+    const peerConnectionRef = useRef(null);
+
+    // State
     const [localStream, setLocalStream] = useState(null);
-    const [remoteStream, setRemoteStream] = useState(null);
     const [error, setError] = useState(null);
     const [isConnected, setIsConnected] = useState(false);
     const [isMuted, setIsMuted] = useState(false);
     const [isVideoOff, setIsVideoOff] = useState(false);
-    const [connectionStatus, setConnectionStatus] = useState('Connecting...');
-
-    const localVideoRef = useRef();
-    const remoteVideoRef = useRef();
-    const peerConnectionRef = useRef();
-    const socketRef = useRef();
+    const [connectionStatus, setConnectionStatus] = useState('Connecting to doctor...');
 
     useEffect(() => {
-        let stream = null;
-
-        const init = async () => {
+        const initializeConnection = async () => {
             try {
                 // 1. Get local media stream
-                stream = await navigator.mediaDevices.getUserMedia({
+                const stream = await navigator.mediaDevices.getUserMedia({
                     video: true,
                     audio: true
                 });
                 
-                console.log('Patient: Local stream obtained');
                 setLocalStream(stream);
                 if (localVideoRef.current) {
                     localVideoRef.current.srcObject = stream;
@@ -49,25 +48,76 @@ const VideoConsultation = ({ isDoctor }) => {
                     ]
                 });
 
-                // Add local stream tracks to peer connection
+                // Add tracks to peer connection
                 stream.getTracks().forEach(track => {
-                    console.log('Patient: Adding track to peer connection');
                     pc.addTrack(track, stream);
                 });
 
                 // Handle incoming stream
                 pc.ontrack = (event) => {
-                    console.log('Patient: Received remote track');
+                    console.log('Received remote track');
                     if (remoteVideoRef.current && event.streams[0]) {
                         remoteVideoRef.current.srcObject = event.streams[0];
+                        setIsConnected(true);
+                        setConnectionStatus('Connected');
                     }
                 };
+
+                // 3. Set up Socket.IO connection
+                const socket = io('http://localhost:3009', {
+                    transports: ['websocket'],
+                    reconnection: true,
+                    reconnectionAttempts: 5,
+                    reconnectionDelay: 1000,
+                    timeout: 10000
+                });
+
+                socket.on('connect', () => {
+                    console.log('Patient connected to socket server');
+                    socket.emit('join-room', { meeting_id, isDoctor: false });
+                });
+
+                socket.on('joined-room', (response) => {
+                    if (response.success) {
+                        console.log('Successfully joined room:', response.meeting_id);
+                        setConnectionStatus('Connected to room, waiting for doctor...');
+                    }
+                });
+
+                socket.on('user-connected', async () => {
+                    console.log('Doctor connected, creating offer');
+                    try {
+                        const offer = await pc.createOffer();
+                        await pc.setLocalDescription(offer);
+                        socket.emit('offer', { offer, meeting_id });
+                    } catch (err) {
+                        console.error('Error creating offer:', err);
+                    }
+                });
+
+                socket.on('answer', async (answer) => {
+                    console.log('Received answer from doctor');
+                    try {
+                        await pc.setRemoteDescription(new RTCSessionDescription(answer));
+                    } catch (err) {
+                        console.error('Error setting remote description:', err);
+                    }
+                });
+
+                socket.on('ice-candidate', async (candidate) => {
+                    try {
+                        if (pc.remoteDescription) {
+                            await pc.addIceCandidate(new RTCIceCandidate(candidate));
+                        }
+                    } catch (err) {
+                        console.error('Error adding ICE candidate:', err);
+                    }
+                });
 
                 // ICE candidate handling
                 pc.onicecandidate = (event) => {
                     if (event.candidate) {
-                        console.log('Patient: Sending ICE candidate');
-                        socketRef.current.emit('ice-candidate', {
+                        socket.emit('ice-candidate', {
                             candidate: event.candidate,
                             meeting_id
                         });
@@ -75,67 +125,32 @@ const VideoConsultation = ({ isDoctor }) => {
                 };
 
                 pc.oniceconnectionstatechange = () => {
-                    console.log('Patient ICE Connection State:', pc.iceConnectionState);
+                    console.log('ICE Connection State:', pc.iceConnectionState);
+                    if (pc.iceConnectionState === 'connected') {
+                        setConnectionStatus('Connected to doctor');
+                        setIsConnected(true);
+                    } else if (pc.iceConnectionState === 'disconnected') {
+                        setConnectionStatus('Disconnected from doctor');
+                        setIsConnected(false);
+                    }
                 };
 
+                // Store references
+                socketRef.current = socket;
                 peerConnectionRef.current = pc;
 
-                // 3. Set up socket connection
-                socketRef.current = io('https://backend-diagno.onrender.com', {
-                    transports: ['websocket']
-                });
-
-                socketRef.current.on('connect', () => {
-                    console.log('Patient: Socket connected');
-                    socketRef.current.emit('join-room', { meeting_id, isDoctor: false });
-                });
-
-                socketRef.current.on('user-connected', async () => {
-                    console.log('Patient: Doctor connected, creating offer');
-                    try {
-                        const offer = await pc.createOffer({
-                            offerToReceiveAudio: true,
-                            offerToReceiveVideo: true
-                        });
-                        await pc.setLocalDescription(offer);
-                        console.log('Patient: Sending offer');
-                        socketRef.current.emit('offer', { offer, meeting_id });
-                    } catch (err) {
-                        console.error('Patient: Error creating offer:', err);
-                    }
-                });
-
-                socketRef.current.on('answer', async (answer) => {
-                    console.log('Patient: Received answer');
-                    try {
-                        await pc.setRemoteDescription(new RTCSessionDescription(answer));
-                    } catch (err) {
-                        console.error('Patient: Error setting remote description:', err);
-                    }
-                });
-
-                socketRef.current.on('ice-candidate', async (candidate) => {
-                    try {
-                        if (pc.remoteDescription) {
-                            console.log('Patient: Adding ICE candidate');
-                            await pc.addIceCandidate(new RTCIceCandidate(candidate));
-                        }
-                    } catch (err) {
-                        console.error('Patient: Error adding ICE candidate:', err);
-                    }
-                });
-
             } catch (err) {
-                console.error('Patient: Error initializing:', err);
+                console.error('Failed to initialize:', err);
                 setError(err.message);
             }
         };
 
-        init();
+        initializeConnection();
 
+        // Cleanup
         return () => {
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
             }
             if (peerConnectionRef.current) {
                 peerConnectionRef.current.close();
@@ -146,17 +161,7 @@ const VideoConsultation = ({ isDoctor }) => {
         };
     }, [meeting_id]);
 
-    const handleEndCall = () => {
-        if (localStream) {
-            localStream.getTracks().forEach(track => track.stop());
-        }
-        if (peerConnectionRef.current) {
-            peerConnectionRef.current.close();
-        }
-        socketRef.current.disconnect();
-        history.push('/');
-    };
-
+    // Control functions
     const toggleMute = () => {
         if (localStream) {
             localStream.getAudioTracks().forEach(track => {
@@ -173,6 +178,19 @@ const VideoConsultation = ({ isDoctor }) => {
             });
             setIsVideoOff(!isVideoOff);
         }
+    };
+
+    const handleEndCall = () => {
+        if (localStream) {
+            localStream.getTracks().forEach(track => track.stop());
+        }
+        if (peerConnectionRef.current) {
+            peerConnectionRef.current.close();
+        }
+        if (socketRef.current) {
+            socketRef.current.disconnect();
+        }
+        history.push('/');
     };
 
     if (error) {
@@ -193,7 +211,7 @@ const VideoConsultation = ({ isDoctor }) => {
         <div className="video-consultation-container">
             <div className="consultation-header">
                 <div className="consultation-info">
-                    <h2>{isDoctor ? 'Patient Consultation' : 'Doctor Consultation'}</h2>
+                    <h2>Patient Consultation</h2>
                     <div className="consultation-status">
                         <div className="status-indicator"></div>
                         <span>{connectionStatus}</span>

@@ -1,5 +1,3 @@
-
-
 import React from 'react';
 import { Link } from "react-router-dom";
 import Header from "../Header/Header";
@@ -62,7 +60,7 @@ class Analyse extends React.Component {
         formData.append('language', selectedLanguage);
 
         try {
-            const response = await fetch('https://backend-diagno.onrender.com/api/analyze', {
+            const response = await fetch('http://localhost:3009/api/analyze', {
                 method: 'POST',
                 body: formData,
                 headers: {
@@ -339,12 +337,17 @@ class Analyse extends React.Component {
                                         <Link 
                                             to={{
                                                 pathname: "/appointments",
-                                                state: { specialist: recommendedSpecialist }
+                                                search: `?specialist=${encodeURIComponent(recommendedSpecialist)}`,
+                                                state: { specialist: recommendedSpecialist.length > 0 ? recommendedSpecialist : "General Medicine" }
                                             }}
                                             className="appointment-link"
                                         >
                                             <button className="report-button">
-                                                Book Appointment with {recommendedSpecialist}
+                                                {recommendedSpecialist.length > 0 ? (
+                                                    `Book Appointment with ${recommendedSpecialist}`
+                                                ) : (
+                                                    "General Medicine"
+                                                )}
                                             </button>
                                         </Link>
                                     </div>

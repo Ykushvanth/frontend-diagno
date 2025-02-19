@@ -24,44 +24,32 @@ const Profile = () => {
     const [userDetails, setUserDetails] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const history = useHistory();
 
     useEffect(() => {
-        const fetchUserProfile = async () => {
-            try {
+        try {
+            const storedDetails = localStorage.getItem('userDetails');
+            console.log('Raw stored details:', storedDetails); // Debug log
+
+            if (storedDetails) {
+                const parsedDetails = JSON.parse(storedDetails);
+                console.log('Parsed user details:', parsedDetails); // Debug log
                 
-                const jwtToken = Cookies.get('jwt_token');
-               const userId = JSON.parse(localStorage.getItem('userData'));
-                console.log(userId)
-                console.log("sur")
-                if (!jwtToken) {
-                    throw new Error('Authentication required');
-                }
-
-                const response = await fetch(`https://backend-diagno.onrender.com/api/user/${userId}`, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${jwtToken}`,
-                        'Content-Type': 'application/json'
+                // Format the date if it exists
+                if (parsedDetails.dateofbirth) {
+                    try {
+                        const date = new Date(parsedDetails.dateofbirth);
+                        parsedDetails.dateofbirth = date.toISOString().split('T')[0];
+                    } catch (e) {
+                        console.error('Date formatting error:', e);
                     }
-                });
-                console.log(response)
-                if (!response.ok) {
-                   
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || 'Failed to fetch user details');
                 }
-
-                const data = await response.json();
-                setUserDetails(data);
-            } catch (err) {
-                console.error('Profile fetch error:', err);
-                setError(err.message);
-            } finally {
-                setLoading(false);
+                
+                setUserDetails(parsedDetails);
             }
-        };
-
-        fetchUserProfile();
+        } catch (error) {
+            console.error('Error loading user details:', error);
+        }
     }, []);
 
     if (loading) {
@@ -78,6 +66,16 @@ const Profile = () => {
             </div>
         );
     }
+
+    if (!userDetails) {
+        return <div>Loading...</div>;
+    }
+
+    // Debug log to check phone number field
+    console.log('Phone number value:', {
+        phonenumber: userDetails.phonenumber,
+        phoneNumber: userDetails.phoneNumber
+    });
 
     return (
         <>
@@ -148,7 +146,7 @@ const Profile = () => {
                                 </div>
                                 <div className="detail-item">
                                     <label>Date of Birth</label>
-                                    <p>{userDetails?.dateOfBirth}</p>
+                                    <p>{userDetails?.dateofbirth || 'Not provided'}</p>
                                 </div>
                                 <div className="detail-item">
                                     <label>Gender</label>
@@ -170,7 +168,7 @@ const Profile = () => {
                                 </div>
                                 <div className="detail-item">
                                     <label>Phone</label>
-                                    <p>{userDetails?.phoneNumber}</p>
+                                    <p>{userDetails?.phonenumber || 'Not provided'}</p>
                                 </div>
                                 <div className="detail-item">
                                     <label>Emergency Contact</label>
