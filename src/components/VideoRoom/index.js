@@ -21,9 +21,7 @@ const VideoRoom = () => {
     const [retryCount, setRetryCount] = useState(0);
 
     const connectToWebSocket = () => {
-        const wsUrl = isDoctor 
-            ? 'wss://doctors-frontend-diango.vercel.app/ws'
-            : 'wss://frontend-diagno.vercel.app/ws';
+        const wsUrl = isDoctor ? 'ws://localhost:3000/ws' : 'ws://frontend-diagno.vercel.app/ws';
         webSocket.current = new WebSocket(wsUrl);
 
         webSocket.current.onopen = () => {
