@@ -7,12 +7,14 @@ import { FaMicrophone, FaMicrophoneSlash, FaVideo, FaVideoSlash, FaPhone } from 
 const VideoConsultation = () => {
     const { meeting_id } = useParams();
     const history = useHistory();
+    const isDoctor = false; // Explicitly set for patient's component
 
     // Refs
     const localVideoRef = useRef(null);
     const remoteVideoRef = useRef(null);
     const socketRef = useRef(null);
     const peerConnectionRef = useRef(null);
+    const localStreamRef = useRef(null);
 
     // State
     const [localStream, setLocalStream] = useState(null);
@@ -20,137 +22,131 @@ const VideoConsultation = () => {
     const [isConnected, setIsConnected] = useState(false);
     const [isMuted, setIsMuted] = useState(false);
     const [isVideoOff, setIsVideoOff] = useState(false);
-    const [connectionStatus, setConnectionStatus] = useState('Connecting to doctor...');
+    const [connectionStatus, setConnectionStatus] = useState('Connecting...');
+
+    const createPeerConnection = () => {
+        console.log('Patient: Creating peer connection');
+        const pc = new RTCPeerConnection({
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                {
+                    urls: 'turn:numb.viagenie.ca',
+                    username: 'webrtc@live.com',
+                    credential: 'muazkh'
+                }
+            ]
+        });
+
+        if (localStreamRef.current) {
+            console.log('Patient: Adding local tracks to peer connection');
+            localStreamRef.current.getTracks().forEach(track => {
+                pc.addTrack(track, localStreamRef.current);
+            });
+        }
+
+        pc.ontrack = (event) => {
+            console.log('Patient: Received remote track');
+            if (remoteVideoRef.current && event.streams[0]) {
+                console.log('Patient: Setting remote video stream');
+                remoteVideoRef.current.srcObject = event.streams[0];
+                setIsConnected(true);
+                setConnectionStatus('Connected');
+            }
+        };
+
+        pc.onicecandidate = (event) => {
+            if (event.candidate) {
+                console.log('Patient: Sending ICE candidate');
+                socketRef.current.emit('ice-candidate', {
+                    candidate: event.candidate,
+                    meeting_id
+                });
+            }
+        };
+
+        pc.oniceconnectionstatechange = () => {
+            console.log('Patient ICE connection state:', pc.iceConnectionState);
+        };
+
+        pc.onconnectionstatechange = () => {
+            console.log('Patient connection state:', pc.connectionState);
+        };
+
+        return pc;
+    };
 
     useEffect(() => {
-        const initializeConnection = async () => {
+        const init = async () => {
             try {
-                // 1. Get local media stream
+                console.log('Patient: Initializing media stream');
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: true,
                     audio: true
                 });
-                
-                setLocalStream(stream);
+                localStreamRef.current = stream;
                 if (localVideoRef.current) {
                     localVideoRef.current.srcObject = stream;
                 }
 
-                // 2. Create peer connection
-                const pc = new RTCPeerConnection({
-                    iceServers: [
-                        { urls: 'stun:stun.l.google.com:19302' },
-                        {
-                            urls: 'turn:numb.viagenie.ca',
-                            username: 'webrtc@live.com',
-                            credential: 'muazkh'
-                        }
-                    ]
+                socketRef.current = io('https://backend-diagno-1.onrender.com');
+
+                socketRef.current.on('connect', () => {
+                    console.log('Patient: Socket connected');
+                    socketRef.current.emit('join-room', {
+                        meeting_id,
+                        role: 'Patient'
+                    });
                 });
 
-                // Add tracks to peer connection
-                stream.getTracks().forEach(track => {
-                    pc.addTrack(track, stream);
-                });
-
-                // Handle incoming stream
-                pc.ontrack = (event) => {
-                    console.log('Received remote track');
-                    if (remoteVideoRef.current && event.streams[0]) {
-                        remoteVideoRef.current.srcObject = event.streams[0];
-                        setIsConnected(true);
-                        setConnectionStatus('Connected');
+                socketRef.current.on('offer', async ({ offer }) => {
+                    console.log('Patient: Received offer');
+                    if (!peerConnectionRef.current) {
+                        peerConnectionRef.current = createPeerConnection();
                     }
-                };
 
-                // 3. Set up Socket.IO connection
-                const socket = io('https://backend-diagno-1.onrender.com', {
-                    transports: ['websocket'],
-                    reconnection: true,
-                    reconnectionAttempts: 5,
-                    reconnectionDelay: 1000,
-                    timeout: 10000
-                });
-
-                socket.on('connect', () => {
-                    console.log('Patient connected to socket server');
-                    socket.emit('join-room', { meeting_id, isDoctor: false });
-                });
-
-                socket.on('joined-room', (response) => {
-                    if (response.success) {
-                        console.log('Successfully joined room:', response.meeting_id);
-                        setConnectionStatus('Connected to room, waiting for doctor...');
-                    }
-                });
-
-                socket.on('user-connected', async () => {
-                    console.log('Doctor connected, creating offer');
                     try {
-                        const offer = await pc.createOffer();
-                        await pc.setLocalDescription(offer);
-                        socket.emit('offer', { offer, meeting_id });
-                    } catch (err) {
-                        console.error('Error creating offer:', err);
-                    }
-                });
-
-                socket.on('answer', async (answer) => {
-                    console.log('Received answer from doctor');
-                    try {
-                        await pc.setRemoteDescription(new RTCSessionDescription(answer));
-                    } catch (err) {
-                        console.error('Error setting remote description:', err);
-                    }
-                });
-
-                socket.on('ice-candidate', async (candidate) => {
-                    try {
-                        if (pc.remoteDescription) {
-                            await pc.addIceCandidate(new RTCIceCandidate(candidate));
-                        }
-                    } catch (err) {
-                        console.error('Error adding ICE candidate:', err);
-                    }
-                });
-
-                // ICE candidate handling
-                pc.onicecandidate = (event) => {
-                    if (event.candidate) {
-                        socket.emit('ice-candidate', {
-                            candidate: event.candidate,
+                        await peerConnectionRef.current.setRemoteDescription(
+                            new RTCSessionDescription(offer)
+                        );
+                        
+                        const answer = await peerConnectionRef.current.createAnswer();
+                        await peerConnectionRef.current.setLocalDescription(answer);
+                        
+                        console.log('Patient: Sending answer');
+                        socketRef.current.emit('answer', {
+                            answer,
                             meeting_id
                         });
+                    } catch (err) {
+                        console.error('Patient: Error handling offer:', err);
                     }
-                };
+                });
 
-                pc.oniceconnectionstatechange = () => {
-                    console.log('ICE Connection State:', pc.iceConnectionState);
-                    if (pc.iceConnectionState === 'connected') {
-                        setConnectionStatus('Connected to doctor');
-                        setIsConnected(true);
-                    } else if (pc.iceConnectionState === 'disconnected') {
-                        setConnectionStatus('Disconnected from doctor');
-                        setIsConnected(false);
+                socketRef.current.on('ice-candidate', async ({ candidate }) => {
+                    console.log('Patient: Received ICE candidate');
+                    if (peerConnectionRef.current) {
+                        try {
+                            await peerConnectionRef.current.addIceCandidate(
+                                new RTCIceCandidate(candidate)
+                            );
+                            console.log('Patient: Added ICE candidate success');
+                        } catch (err) {
+                            console.error('Patient: Error adding ICE candidate:', err);
+                        }
                     }
-                };
-
-                // Store references
-                socketRef.current = socket;
-                peerConnectionRef.current = pc;
+                });
 
             } catch (err) {
-                console.error('Failed to initialize:', err);
+                console.error('Patient: Initialization error:', err);
                 setError(err.message);
             }
         };
 
-        initializeConnection();
+        init();
 
-        // Cleanup
         return () => {
-            if (localStream) {
-                localStream.getTracks().forEach(track => track.stop());
+            if (localStreamRef.current) {
+                localStreamRef.current.getTracks().forEach(track => track.stop());
             }
             if (peerConnectionRef.current) {
                 peerConnectionRef.current.close();
