@@ -46,12 +46,13 @@ const Profile = () => {
                 }
                 
                 setUserDetails(parsedDetails);
+                setLoading(false);
             }
         } catch (error) {
             console.error('Error loading user details:', error);
         }
     }, []);
-
+    console.log(userDetails)
     if (loading) {
         return <div className="loading">Loading...</div>;
     }

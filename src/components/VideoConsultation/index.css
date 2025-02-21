@@ -143,4 +143,38 @@
         width: 120px;
         height: 90px;
     }
+}
+
+.vital-signs-overlay {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 10px 15px;
+    border-radius: 8px;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 2;
+}
+
+.temperature-display {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.temp-icon {
+    color: #ff6b6b;
+}
+
+/* Add responsive styles */
+@media (max-width: 768px) {
+    .vital-signs-overlay {
+        top: 10px;
+        left: 10px;
+        padding: 8px 12px;
+        font-size: 0.9rem;
+    }
 } 

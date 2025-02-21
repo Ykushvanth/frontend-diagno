@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useHistory } from 'react-router-dom';
 import io from 'socket.io-client';
 import './index.css';
-import { FaMicrophone, FaMicrophoneSlash, FaVideo, FaVideoSlash, FaPhone } from 'react-icons/fa';
+import { FaMicrophone, FaMicrophoneSlash, FaVideo, FaVideoSlash, FaPhone, FaThermometer } from 'react-icons/fa';
+import supabase from '../../lib/supabase';
 
 const VideoConsultation = () => {
     const { meeting_id } = useParams();
@@ -23,6 +24,9 @@ const VideoConsultation = () => {
     const [isMuted, setIsMuted] = useState(false);
     const [isVideoOff, setIsVideoOff] = useState(false);
     const [connectionStatus, setConnectionStatus] = useState('Connecting...');
+    const [appointmentDetails, setAppointmentDetails] = useState({
+        temperature: null
+    });
 
     const createPeerConnection = () => {
         console.log('Patient: Creating peer connection');
@@ -142,7 +146,26 @@ const VideoConsultation = () => {
             }
         };
 
+        const fetchAppointmentDetails = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from('appointments')
+                    .select('*')
+                    .eq('meeting_id', meeting_id)
+                    .single();
+
+                if (error) throw error;
+
+                if (data) {
+                    setAppointmentDetails(data);
+                }
+            } catch (err) {
+                console.error('Error fetching appointment details:', err);
+            }
+        };
+
         init();
+        fetchAppointmentDetails();
 
         return () => {
             if (localStreamRef.current) {
@@ -226,6 +249,12 @@ const VideoConsultation = () => {
                         playsInline
                         className="remote-video"
                     />
+                    <div className="vital-signs-overlay">
+                        <div className="temperature-display">
+                            <FaThermometer className="temp-icon" />
+                            <span>{appointmentDetails.temperature ? `${appointmentDetails.temperature}°C` : 'N/A'}</span>
+                        </div>
+                    </div>
                 </div>
                 <div className="local-video-container">
                     <video
