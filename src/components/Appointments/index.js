@@ -598,7 +598,7 @@ class Appointments extends Component {
     });
 
     try {
-        const response = await fetch('https://backend-diagno.onrender.com/api/appointments', {
+        const response = await fetch('https://backend-diagno-1.onrender.com/api/appointments', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

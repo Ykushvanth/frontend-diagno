@@ -13,6 +13,7 @@ import Cookies from 'js-cookie';
 import Profile from './components/Profile';
 import VideoConsultation from './components/VideoConsultation';
 import VideoRoom from './components/VideoRoom';
+import DiagnosisAppointments from './components/DiagnosisAppointments/index';
 
 import './App.css';
 
@@ -62,6 +63,7 @@ const App = () => {
           </Route>
           <Route exact path="/doctor/video-room/:meeting_id" component={VideoRoom} />
           <Route exact path="/video-consultation/:meeting_id" component={VideoRoom} />
+          <PrivateRoute exact path="/diagnosis-appointments" component={DiagnosisAppointments} />
         </Switch>
       </Router>
     </div>
